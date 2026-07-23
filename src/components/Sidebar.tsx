@@ -3,11 +3,15 @@ import type { Footprint } from "../types";
 interface SidebarProps {
   footprints: Footprint[];
   onSelect: (footprint: Footprint) => void;
+  onBack: () => void;
 }
 
-export default function Sidebar({ footprints, onSelect }: SidebarProps) {
+export default function Sidebar({ footprints, onSelect, onBack }: SidebarProps) {
   return (
     <aside className="sidebar">
+      <button type="button" className="back-button" onClick={onBack}>
+        ← 返回宇宙
+      </button>
       <h1>我的足迹</h1>
       <p className="hint">拖动旋转地球，点击地表任意位置添加一个足迹</p>
       {footprints.length === 0 ? (

@@ -1,19 +1,24 @@
 # Globe Footprint 足迹地球
 
-一个以 3D 地球为核心的个人足迹记录网站：拖动旋转地球，点击任意地表位置，为去过的地方添加照片和文字记录。
+一个以 3D 星球为核心的个人足迹记录网站。首页是一个可自由漫游的多星球宇宙，地球固定在中心、更大更亮，是主功能入口；点击地球进入足迹标记功能，点击任意地表位置为去过的地方添加照片和文字记录。
 
 ## 功能
 
-- 可拖动旋转、滚轮缩放的 3D 地球（Three.js + react-three-fiber）
-- 点击地表任意位置，输入地点名称、文字记录并上传照片，即可生成一个足迹标记
-- 侧边栏列出所有足迹，点击可让镜头飞向对应位置并查看详情
-- 点击已有标记查看/编辑文字记录、增删照片
+- **宇宙概览**：多颗星球自由分布在 3D 空间中，相机可带阻尼惯性地自由环绕漫游，星球各自缓慢自转
+- **点击聚焦**：点击任意星球，镜头缓动飞向它，其余星球缩小、推向背景并降低饱和度/不透明度，配合辉光（Bloom）与景深（DepthOfField）营造"虚焦配角"的氛围
+- **地球 = 足迹功能**：聚焦地球后，点击地表任意位置，输入地点名称、文字记录并上传照片，即可生成一个足迹标记；侧边栏列出所有足迹，点击可让镜头飞向对应位置并查看详情
+- 其余星球目前是功能占位（点击后显示"建设中"面板），后续可扩展为独立功能模块
+- 点击空白处或返回按钮可退出聚焦，回到宇宙概览
 - 数据保存在浏览器 `localStorage` 中（无需登录、无需后端），照片会在上传时自动压缩为合适尺寸
 
 ## 技术栈
 
 - [Vite](https://vite.dev/) + React + TypeScript
 - [three.js](https://threejs.org/) via [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) / [@react-three/drei](https://github.com/pmndrs/drei)
+- [@react-three/postprocessing](https://github.com/pmndrs/react-postprocessing)（Bloom 辉光 + DepthOfField 景深）
+- [GSAP](https://gsap.com/) 驱动相机聚焦/返回的缓动动画
+
+> 性能提示：景深（DepthOfField）是相对较重的后处理效果，仅在聚焦某颗星球时才启用。如果在低性能设备上感觉卡顿，可以在 `src/components/Scene.tsx` 中移除 `<DepthOfField>`，只保留 `<Bloom>`。
 
 ## 本地开发
 

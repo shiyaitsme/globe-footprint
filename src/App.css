@@ -70,6 +70,69 @@
   color: rgba(244, 244, 246, 0.5);
 }
 
+.back-button {
+  display: inline-block;
+  margin-bottom: 14px;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(244, 244, 246, 0.85);
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.overview-hint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  padding: 24px 20px;
+  pointer-events: none;
+}
+
+.overview-hint h1 {
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+
+.overview-hint p {
+  font-size: 13px;
+  color: rgba(244, 244, 246, 0.6);
+  margin: 0;
+}
+
+.placeholder-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  width: 280px;
+  padding: 24px 20px;
+  background: rgba(8, 10, 20, 0.7);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.placeholder-panel h1 {
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+
+.placeholder-panel p {
+  font-size: 13px;
+  color: rgba(244, 244, 246, 0.6);
+  margin: 0;
+  line-height: 1.5;
+}
+
 .marker-label {
   padding: 2px 8px;
   border-radius: 6px;
