@@ -1,10 +1,15 @@
-import { useState } from "react";
-import Scene from "./components/Scene";
-import Sidebar from "./components/Sidebar";
-import AddPlaceModal from "./components/AddPlaceModal";
-import PlaceModal from "./components/PlaceModal";
+import { useMemo, useRef, useState } from "react";
+import EarthSlot from "./components/hud/EarthSlot";
+import NavBar from "./components/hud/NavBar";
+import GreetingCard from "./components/hud/GreetingCard";
+import DistributionCard from "./components/hud/DistributionCard";
+import StatStrip from "./components/hud/StatStrip";
+import AddFab from "./components/hud/AddFab";
+import AddFootprintPopup from "./components/hud/AddFootprintPopup";
+import FootprintPopup from "./components/hud/FootprintPopup";
+import type { EarthCanvasApi } from "./components/hud/EarthCanvas";
 import { useFootprints } from "./hooks/useFootprints";
-import { EARTH_ID, getPlanetConfig } from "./planets";
+import { computeDistribution, computeSummary } from "./utils/geoStats";
 import type { Footprint } from "./types";
 import "./App.css";
 
@@ -12,89 +17,86 @@ export default function App() {
   const { footprints, addFootprint, updateFootprint, removeFootprint } = useFootprints();
   const [pendingLocation, setPendingLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
-  const [footprintTarget, setFootprintTarget] = useState<{ lat: number; lng: number } | null>(null);
+  const apiRef = useRef<EarthCanvasApi | null>(null);
 
-  const handleSurfaceClick = (lat: number, lng: number) => {
-    setPendingLocation({ lat, lng });
-  };
-
-  const handleSelectFootprint = (footprint: Footprint) => {
-    setSelectedId(footprint.id);
-    setFocusedId(EARTH_ID);
-    setFootprintTarget({ lat: footprint.lat, lng: footprint.lng });
-  };
-
-  const handleFocusPlanet = (id: string) => {
-    setFocusedId(id);
-  };
-
-  const handleExitFocus = () => {
-    setFocusedId(null);
-    setSelectedId(null);
-    setPendingLocation(null);
-    setFootprintTarget(null);
-  };
-
+  const summary = useMemo(() => computeSummary(footprints), [footprints]);
+  const distribution = useMemo(() => computeDistribution(footprints), [footprints]);
   const selectedFootprint = selectedId ? footprints.find((f) => f.id === selectedId) ?? null : null;
-  const focusedPlaceholder =
-    focusedId && focusedId !== EARTH_ID ? getPlanetConfig(focusedId) ?? null : null;
+
+  const handleFabClick = () => {
+    const center = apiRef.current?.getCenterLatLng() ?? { lat: 0, lng: 0 };
+    setPendingLocation(center);
+  };
 
   return (
-    <div className="app">
-      {focusedId === EARTH_ID && (
-        <Sidebar footprints={footprints} onSelect={handleSelectFootprint} onBack={handleExitFocus} />
-      )}
+    <div
+      style={{
+        position: "relative",
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+        fontFamily: "'Montserrat','Noto Sans SC','PingFang SC',sans-serif",
+        background: "#050507",
+      }}
+    >
+      <img
+        src="/design/space-bg.jpg"
+        alt=""
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          filter: "brightness(0.72) saturate(1.05)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 78%)",
+        }}
+      />
 
-      {focusedId === null && (
-        <div className="overview-hint">
-          <h1>宇宙</h1>
-          <p>拖动自由漫游，点击任意星球开始探索</p>
-        </div>
-      )}
+      <NavBar variant="top" />
+      <GreetingCard countries={summary.countries} cities={summary.cities} />
+      <DistributionCard stats={distribution} />
+      <StatStrip countries={summary.countries} cities={summary.cities} footprints={summary.footprints} />
+      <AddFab onClick={handleFabClick} />
+      <NavBar variant="bottom" />
 
-      {focusedPlaceholder && (
-        <div className="placeholder-panel">
-          <button type="button" className="back-button" onClick={handleExitFocus}>
-            ← 返回宇宙
-          </button>
-          <h1>{focusedPlaceholder.name}</h1>
-          <p>这颗星球的功能正在建设中，敬请期待</p>
-        </div>
-      )}
-
-      <Scene
+      <EarthSlot
         footprints={footprints}
-        focusedId={focusedId}
-        footprintTarget={footprintTarget}
-        onSurfaceClick={handleSurfaceClick}
-        onSelectFootprint={handleSelectFootprint}
-        onFocusPlanet={handleFocusPlanet}
-        onExitFocus={handleExitFocus}
+        onSurfaceClick={(lat, lng) => setPendingLocation({ lat, lng })}
+        onSelectFootprint={(footprint) => setSelectedId(footprint.id)}
+        apiRef={apiRef}
       />
 
       {pendingLocation && (
-        <AddPlaceModal
+        <AddFootprintPopup
           lat={pendingLocation.lat}
           lng={pendingLocation.lng}
           onCancel={() => setPendingLocation(null)}
-          onSave={({ name, notes, photos }) => {
-            addFootprint({
+          onSave={({ name, country, notes, photos }) => {
+            const footprint: Footprint = {
               id: crypto.randomUUID(),
               name,
+              country,
               notes,
               photos,
               lat: pendingLocation.lat,
               lng: pendingLocation.lng,
               createdAt: Date.now(),
-            });
+            };
+            addFootprint(footprint);
             setPendingLocation(null);
           }}
         />
       )}
 
       {selectedFootprint && (
-        <PlaceModal
+        <FootprintPopup
           footprint={selectedFootprint}
           onClose={() => setSelectedId(null)}
           onUpdate={(patch) => updateFootprint(selectedFootprint.id, patch)}

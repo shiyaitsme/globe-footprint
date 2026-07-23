@@ -6,7 +6,9 @@ const STORAGE_KEY = "globe-footprint.places";
 function load(): Footprint[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Footprint[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Footprint[];
+    return parsed.map((f) => ({ ...f, country: f.country ?? "" }));
   } catch {
     return [];
   }

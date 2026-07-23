@@ -1,4 +1,5 @@
 import { useMemo, useRef } from "react";
+import type { ReactNode } from "react";
 import { useFrame, useLoader } from "@react-three/fiber";
 import { Group, Mesh, MeshStandardMaterial, TextureLoader, Vector3 } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
@@ -11,6 +12,12 @@ const EARTH_TEXTURE_URL = "/textures/earth.jpg";
 
 export const EARTH_RADIUS = EARTH_CONFIG.radius;
 
+function unrotateY(point: Vector3, angle: number): Vector3 {
+  const cos = Math.cos(-angle);
+  const sin = Math.sin(-angle);
+  return new Vector3(point.x * cos + point.z * sin, point.y, -point.x * sin + point.z * cos);
+}
+
 interface EarthProps {
   focused: boolean;
   dimmed: boolean;
@@ -18,6 +25,7 @@ interface EarthProps {
   onSelect: () => void;
   onSurfaceClick: (lat: number, lng: number) => void;
   onSelectFootprint: (footprint: Footprint) => void;
+  renderMarker?: (footprint: Footprint) => ReactNode;
 }
 
 export default function Earth({
@@ -27,6 +35,7 @@ export default function Earth({
   onSelect,
   onSurfaceClick,
   onSelectFootprint,
+  renderMarker,
 }: EarthProps) {
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
@@ -37,8 +46,8 @@ export default function Earth({
   const pushedPosition = useMemo(() => new Vector3(...EARTH_DIMMED_POSITION), []);
 
   useFrame((_, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += delta * EARTH_CONFIG.rotationSpeed;
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * EARTH_CONFIG.rotationSpeed;
     }
     const targetScale = dimmed ? FOCUS_DIM_SCALE : 1;
     const targetOpacity = dimmed ? FOCUS_DIM_OPACITY : 1;
@@ -61,7 +70,8 @@ export default function Earth({
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
     if (focused) {
-      const { lat, lng } = vector3ToLatLng(event.point, EARTH_RADIUS);
+      const adjusted = unrotateY(event.point, groupRef.current?.rotation.y ?? 0);
+      const { lat, lng } = vector3ToLatLng(adjusted, EARTH_RADIUS);
       onSurfaceClick(lat, lng);
     } else {
       onSelect();
@@ -75,14 +85,13 @@ export default function Earth({
         <meshStandardMaterial ref={materialRef} map={texture} roughness={0.85} metalness={0} transparent />
       </mesh>
       {focused &&
-        footprints.map((footprint) => (
-          <Marker
-            key={footprint.id}
-            footprint={footprint}
-            radius={EARTH_RADIUS}
-            onSelect={onSelectFootprint}
-          />
-        ))}
+        footprints.map((footprint) =>
+          renderMarker ? (
+            <group key={footprint.id}>{renderMarker(footprint)}</group>
+          ) : (
+            <Marker key={footprint.id} footprint={footprint} radius={EARTH_RADIUS} onSelect={onSelectFootprint} />
+          )
+        )}
     </group>
   );
 }
