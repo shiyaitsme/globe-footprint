@@ -4,6 +4,10 @@ import { Color, Group, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { PlanetConfig } from "../planets";
 import { FOCUS_DIM_OPACITY, FOCUS_DIM_SCALE, FOCUS_LERP_SPEED, FOCUS_PUSH_FACTOR } from "../planets";
+import { generateGasGiantTexture } from "../utils/planetTexture";
+
+const DIMMED_TINT = new Color("#7a7a7a");
+const NORMAL_TINT = new Color("#ffffff");
 
 interface PlanetProps {
   config: PlanetConfig;
@@ -21,12 +25,15 @@ export default function Planet({ config, dimmed, onSelect }: PlanetProps) {
     () => basePosition.clone().multiplyScalar(FOCUS_PUSH_FACTOR),
     [basePosition]
   );
-  const grayColor = useMemo(() => {
-    const hsl = { h: 0, s: 0, l: 0 };
-    new Color(config.color).getHSL(hsl);
-    return new Color().setHSL(hsl.h, hsl.s * 0.15, hsl.l);
-  }, [config.color]);
-  const baseColor = useMemo(() => new Color(config.color), [config.color]);
+  const texture = useMemo(
+    () =>
+      generateGasGiantTexture({
+        palette: config.palette,
+        seed: hashString(config.id),
+        vortex: config.vortex,
+      }),
+    [config.palette, config.id, config.vortex]
+  );
 
   useFrame((_, delta) => {
     if (meshRef.current) {
@@ -47,7 +54,7 @@ export default function Planet({ config, dimmed, onSelect }: PlanetProps) {
     }
     if (materialRef.current) {
       materialRef.current.opacity += (targetOpacity - materialRef.current.opacity) * FOCUS_LERP_SPEED;
-      materialRef.current.color.lerp(dimmed ? grayColor : baseColor, FOCUS_LERP_SPEED);
+      materialRef.current.color.lerp(dimmed ? DIMMED_TINT : NORMAL_TINT, FOCUS_LERP_SPEED);
     }
   });
 
@@ -60,14 +67,16 @@ export default function Planet({ config, dimmed, onSelect }: PlanetProps) {
     <group ref={groupRef} position={config.position}>
       <mesh ref={meshRef} onClick={handleClick}>
         <sphereGeometry args={[config.radius, 48, 48]} />
-        <meshStandardMaterial
-          ref={materialRef}
-          color={config.color}
-          roughness={0.5}
-          metalness={0.1}
-          transparent
-        />
+        <meshStandardMaterial ref={materialRef} map={texture} roughness={0.6} metalness={0.05} transparent />
       </mesh>
     </group>
   );
+}
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return hash || 1;
 }

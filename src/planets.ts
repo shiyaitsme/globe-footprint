@@ -1,11 +1,12 @@
 export interface PlanetConfig {
   id: string;
   name: string;
-  color: string;
   radius: number;
   position: [number, number, number];
   focusDistance: number;
   rotationSpeed: number;
+  palette: string[];
+  vortex?: boolean;
 }
 
 export const EARTH_ID = "earth";
@@ -13,58 +14,59 @@ export const EARTH_ID = "earth";
 export const EARTH_CONFIG: PlanetConfig = {
   id: EARTH_ID,
   name: "地球",
-  color: "#ffffff",
   radius: 2,
   position: [0, 0, 0],
   focusDistance: 6,
   rotationSpeed: 0.02,
+  palette: [],
 };
 
 export const PLACEHOLDER_PLANETS: PlanetConfig[] = [
   {
     id: "planet-1",
     name: "星球 A",
-    color: "#ff6b6b",
     radius: 0.9,
     position: [7, 2.5, -3],
     focusDistance: 6,
     rotationSpeed: 0.05,
+    palette: ["#dce8f5", "#e8b8d8", "#d68fb0", "#e8c5d8", "#c9d8ec"],
   },
   {
     id: "planet-2",
     name: "星球 B",
-    color: "#4c7cf0",
     radius: 1.3,
     position: [-8, -1.5, 2],
     focusDistance: 7.5,
     rotationSpeed: 0.035,
+    palette: ["#0f1f4d", "#2a4d8f", "#4a7ab8", "#7ab8d8", "#bfe3ea"],
   },
   {
     id: "planet-3",
     name: "星球 C",
-    color: "#f0c74c",
     radius: 0.6,
     position: [3.5, -4.5, 6],
     focusDistance: 5,
     rotationSpeed: 0.07,
+    palette: ["#2a5c4a", "#6ba888", "#a8c890", "#8fb8c8", "#9888c8"],
+    vortex: true,
   },
   {
     id: "planet-4",
     name: "星球 D",
-    color: "#9b59ff",
     radius: 1.1,
     position: [-4.5, 4.5, -6],
     focusDistance: 6.5,
     rotationSpeed: 0.04,
+    palette: ["#e8dcc0", "#d8c89a", "#c8d8d0", "#a8c8d8", "#e0d8b8"],
   },
   {
     id: "planet-5",
     name: "星球 E",
-    color: "#4cf0c7",
     radius: 0.7,
     position: [8.5, -2.5, 4],
     focusDistance: 5.5,
     rotationSpeed: 0.06,
+    palette: ["#f0a888", "#e88868", "#d868a0", "#f0c8a8", "#e8a888"],
   },
 ];
 
