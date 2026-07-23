@@ -35,9 +35,10 @@ function ApiBridge({ apiRef }: { apiRef: EarthCanvasProps["apiRef"] }) {
 
 export default function EarthCanvas({ footprints, onSurfaceClick, onSelectFootprint, apiRef }: EarthCanvasProps) {
   return (
-    <Canvas camera={{ position: [0, 0, 6], fov: 45 }} gl={{ alpha: true }}>
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[5, 3, 5]} intensity={1.5} />
+    <Canvas camera={{ position: [0, 0, 4.6], fov: 45 }} gl={{ alpha: true }}>
+      <ambientLight intensity={1.2} />
+      <directionalLight position={[5, 3, 5]} intensity={2.4} />
+      <directionalLight position={[-4, -2, -3]} intensity={0.7} />
       <Suspense fallback={null}>
         <Earth
           focused

@@ -15,14 +15,14 @@ export default function EarthSlot({ footprints, onSurfaceClick, onSelectFootprin
     <div
       style={{
         position: "absolute",
-        top: "58%",
+        top: "52%",
         left: "50%",
         transform: "translate(-50%,-50%)",
-        width: 340,
-        height: 340,
+        width: 440,
+        height: 440,
       }}
     >
-      <div style={{ position: "absolute", inset: -30, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.18)" }} />
+      <div style={{ position: "absolute", inset: -36, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.18)" }} />
       <div
         style={{
           position: "absolute",
