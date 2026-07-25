@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import PlanetBackdrop from "./components/hud/PlanetBackdrop";
 import EarthSlot from "./components/hud/EarthSlot";
 import NavBar from "./components/hud/NavBar";
 import GreetingCard from "./components/hud/GreetingCard";
@@ -39,18 +40,7 @@ export default function App() {
         background: "#050507",
       }}
     >
-      <img
-        src="/design/space-bg.jpg"
-        alt=""
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          filter: "brightness(0.72) saturate(1.05)",
-        }}
-      />
+      <PlanetBackdrop />
       <div
         style={{
           position: "absolute",
