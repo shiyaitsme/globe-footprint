@@ -7,6 +7,8 @@ export interface PlanetConfig {
   rotationSpeed: number;
   palette: string[];
   vortex?: boolean;
+  /** 真实贴图 URL；给了就用 TextureLoader 加载真图，不再走 generateGasGiantTexture 的程序化生成 */
+  textureUrl?: string;
 }
 
 export const EARTH_ID = "earth";
@@ -30,6 +32,7 @@ export const PLACEHOLDER_PLANETS: PlanetConfig[] = [
     focusDistance: 6,
     rotationSpeed: 0.05,
     palette: ["#dce8f5", "#e8b8d8", "#d68fb0", "#e8c5d8", "#c9d8ec"],
+    textureUrl: "/textures/planet_A_texture.png",
   },
   {
     id: "planet-2",

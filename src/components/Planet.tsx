@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import { Color, Group, Mesh, MeshStandardMaterial, Vector3 } from "three";
+import { useFrame, useLoader } from "@react-three/fiber";
+import { Color, Group, Mesh, MeshStandardMaterial, Texture, TextureLoader, Vector3 } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { PlanetConfig } from "../planets";
 import { FOCUS_DIM_OPACITY, FOCUS_DIM_SCALE, FOCUS_LERP_SPEED, FOCUS_PUSH_FACTOR } from "../planets";
@@ -16,15 +16,24 @@ interface PlanetProps {
 }
 
 export default function Planet({ config, dimmed, onSelect }: PlanetProps) {
-  const groupRef = useRef<Group>(null);
-  const meshRef = useRef<Mesh>(null);
-  const materialRef = useRef<MeshStandardMaterial>(null);
-
-  const basePosition = useMemo(() => new Vector3(...config.position), [config.position]);
-  const pushedPosition = useMemo(
-    () => basePosition.clone().multiplyScalar(FOCUS_PUSH_FACTOR),
-    [basePosition]
+  return config.textureUrl ? (
+    <PlanetWithImageTexture config={config} dimmed={dimmed} onSelect={onSelect} textureUrl={config.textureUrl} />
+  ) : (
+    <PlanetWithProceduralTexture config={config} dimmed={dimmed} onSelect={onSelect} />
   );
+}
+
+function PlanetWithImageTexture({
+  config,
+  dimmed,
+  onSelect,
+  textureUrl,
+}: PlanetProps & { textureUrl: string }) {
+  const texture = useLoader(TextureLoader, textureUrl);
+  return <PlanetBody config={config} dimmed={dimmed} onSelect={onSelect} texture={texture} />;
+}
+
+function PlanetWithProceduralTexture({ config, dimmed, onSelect }: PlanetProps) {
   const texture = useMemo(
     () =>
       generateGasGiantTexture({
@@ -33,6 +42,19 @@ export default function Planet({ config, dimmed, onSelect }: PlanetProps) {
         vortex: config.vortex,
       }),
     [config.palette, config.id, config.vortex]
+  );
+  return <PlanetBody config={config} dimmed={dimmed} onSelect={onSelect} texture={texture} />;
+}
+
+function PlanetBody({ config, dimmed, onSelect, texture }: PlanetProps & { texture: Texture }) {
+  const groupRef = useRef<Group>(null);
+  const meshRef = useRef<Mesh>(null);
+  const materialRef = useRef<MeshStandardMaterial>(null);
+
+  const basePosition = useMemo(() => new Vector3(...config.position), [config.position]);
+  const pushedPosition = useMemo(
+    () => basePosition.clone().multiplyScalar(FOCUS_PUSH_FACTOR),
+    [basePosition]
   );
 
   useFrame((_, delta) => {
