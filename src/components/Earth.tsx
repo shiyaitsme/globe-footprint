@@ -6,6 +6,7 @@ import type { ThreeEvent } from "@react-three/fiber";
 import { EARTH_CONFIG, EARTH_DIMMED_POSITION, FOCUS_DIM_OPACITY, FOCUS_DIM_SCALE, FOCUS_LERP_SPEED } from "../planets";
 import Marker from "./Marker";
 import { vector3ToLatLng } from "../utils/geo";
+import { isClickNotDrag } from "../utils/pointer";
 import type { Place } from "../types";
 
 const EARTH_TEXTURE_URL = "/textures/2k_earth_daymap.jpg";
@@ -41,6 +42,7 @@ export default function Earth({
   const meshRef = useRef<Mesh>(null);
   const materialRef = useRef<MeshStandardMaterial>(null);
   const texture = useLoader(TextureLoader, EARTH_TEXTURE_URL);
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
 
   const basePosition = useMemo(() => new Vector3(...EARTH_CONFIG.position), []);
   const pushedPosition = useMemo(() => new Vector3(...EARTH_DIMMED_POSITION), []);
@@ -67,8 +69,14 @@ export default function Earth({
     }
   });
 
+  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
+    pointerDownPos.current = { x: event.clientX, y: event.clientY };
+  };
+
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
+    const start = pointerDownPos.current;
+    if (start && !isClickNotDrag(start.x, start.y, event.clientX, event.clientY)) return;
     if (focused) {
       const adjusted = unrotateY(event.point, groupRef.current?.rotation.y ?? 0);
       const { lat, lng } = vector3ToLatLng(adjusted, EARTH_RADIUS);
@@ -80,7 +88,7 @@ export default function Earth({
 
   return (
     <group ref={groupRef} position={EARTH_CONFIG.position}>
-      <mesh ref={meshRef} onClick={handleClick}>
+      <mesh ref={meshRef} onPointerDown={handlePointerDown} onClick={handleClick}>
         <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
         <meshStandardMaterial ref={materialRef} map={texture} roughness={0.85} metalness={0} transparent />
       </mesh>

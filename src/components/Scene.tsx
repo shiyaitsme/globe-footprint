@@ -60,6 +60,14 @@ export default function Scene({
     [focusedId]
   );
 
+  // 已经聚焦某个星球/地球时，点击场景里的其他星球/地球不应该直接跳过去聚焦它——
+  // 而是先退回宇宙概览（和点击空白处一致），要看别的星球得先退出再点一次。
+  // 只有在宇宙概览（focusedId === null）时点击才会真正切换聚焦目标。
+  const handleFocusableSelect = (id: string) => {
+    if (focusedId === null) onFocusPlanet(id);
+    else if (focusedId !== id) onExitFocus();
+  };
+
   return (
     <Canvas
       camera={{ position: OVERVIEW_CAMERA_POSITION, fov: 50 }}
@@ -76,7 +84,7 @@ export default function Scene({
           focused={focusedId === "earth"}
           dimmed={focusedId !== null && focusedId !== "earth"}
           places={places}
-          onSelect={() => onFocusPlanet("earth")}
+          onSelect={() => handleFocusableSelect("earth")}
           onSurfaceClick={onSurfaceClick}
           onSelectPlace={onSelectPlace}
           renderMarker={renderMarker}
@@ -86,7 +94,7 @@ export default function Scene({
             key={planet.id}
             config={planet}
             dimmed={focusedId !== null && focusedId !== planet.id}
-            onSelect={onFocusPlanet}
+            onSelect={handleFocusableSelect}
           />
         ))}
       </Suspense>

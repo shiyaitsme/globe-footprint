@@ -23,6 +23,10 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 三种状态都会有 `BackButton`（点了退出聚焦回到概览）；概览状态下点击场景空白处（`Scene.tsx` 的 `onPointerMissed`）也会退出聚焦，两种退出方式都要留着。
 
+**已经聚焦某个星球/地球时，点击其他星球/地球不会直接跳过去聚焦它，而是先退回概览**——和点空白处退出是同一个效果，想看别的星球得先退出再点一次。这是 `Scene.tsx` 里 `handleFocusableSelect(id)` 的行为：`focusedId === null`（概览）时点击才会真正切换聚焦目标；已经聚焦时点击"当前聚焦对象以外的东西"一律 `onExitFocus()`，点击当前已聚焦的对象本身则什么都不做。`Earth.tsx`/`Planet.tsx` 自己不知道这个"先退出再切换"的语义，它们始终只是老老实实报告"我被点了"（`onSelect`），语义判断全部收在 `Scene.tsx` 里，别把这层判断下沉到具体星球组件。
+
+**点击 vs 拖拽：`onClick` 不会区分两者。** 用鼠标拖拽转动镜头（OrbitControls 依赖同一块 canvas 的 mousedown/mousemove/mouseup），如果拖拽的起点和终点都落在同一颗星球/地球的网格上，three.js/`@react-three/fiber` 的 `onClick` 依然会正常触发——因为它只看"抬手时鼠标下面是什么"，不管抬手之前鼠标移动了多远。不加处理的话，绕着星球转视角松手的瞬间就会把它意外聚焦打开。修复方式是 `utils/pointer.ts` 的 `isClickNotDrag`：`Earth.tsx`/`Planet.tsx` 的网格上都加了 `onPointerDown` 记录按下时的屏幕坐标，`onClick` 里比较松手坐标和按下坐标的距离，超过 `CLICK_DRAG_THRESHOLD_PX`（6px）就当作是拖拽，直接 return，不触发 `onSelect`/`onSurfaceClick`。这个判断必须放在每个网格自己的 handler 里（而不是 `Scene.tsx` 的 `handleFocusableSelect`），因为它要用到该网格自己的 `onPointerDown`/`onClick` 事件坐标。
+
 `Earth.tsx` 只有一份，靠可选的 `renderMarker` prop 决定用哪种足迹标记样式；现在 `App.tsx` 无论是给 `Scene` 里的地球，都统一传了 `hud/EarthMarker.tsx`（点阵脉冲圆点样式）。`Marker.tsx`（红色小球 + 文字标签）是 `Earth.tsx` 不传 `renderMarker` 时的默认兜底，目前没有调用方在用，但 `Earth.tsx` 的实现依然保留这个分支，不算死代码。
 
 `hud/EarthSlot.tsx` 和 `hud/EarthCanvas.tsx`（那个把地球单独塞进一个固定小圆圈里、带自己独立 Canvas 的旧实现）已经删掉了——`Scene.tsx` 现在是唯一的地球渲染入口，别再重新造一个。
