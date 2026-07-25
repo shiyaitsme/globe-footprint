@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import CornerBrackets from "./CornerBrackets";
+import DrawerPanel from "./DrawerPanel";
 import { fileToCompressedDataUrl } from "../../utils/image";
 import { todayDateString } from "../../hooks/usePlaces";
 
@@ -13,11 +13,19 @@ interface AddPlacePopupProps {
 
 const inputStyle: React.CSSProperties = {
   font: "inherit",
-  padding: "8px 10px",
+  padding: "10px 12px",
   border: "1px solid rgba(255,255,255,0.25)",
   background: "rgba(255,255,255,0.06)",
   color: "#fff",
   resize: "vertical",
+};
+
+const fieldLabelStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: "rgba(255,255,255,0.6)",
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
 };
 
 export default function AddPlacePopup({ lat, lng, onCancel, onSave }: AddPlacePopupProps) {
@@ -46,76 +54,84 @@ export default function AddPlacePopup({ lat, lng, onCancel, onSave }: AddPlacePo
   };
 
   return (
-    <div
-      style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 20 }}
-      onClick={onCancel}
+    <DrawerPanel
+      title="添加新地点"
+      subtitle={`纬度 ${lat.toFixed(2)}° · 经度 ${lng.toFixed(2)}°`}
+      onClose={onCancel}
     >
-      <form
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={handleSubmit}
-        style={{
-          position: "relative",
-          width: 340,
-          padding: 22,
-          background: "rgba(8,8,10,0.6)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          boxShadow: "0 30px 70px rgba(0,0,0,0.5)",
-          fontFamily: "'Montserrat','Noto Sans SC',sans-serif",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <CornerBrackets size={16} />
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>添加新地点</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: -8 }}>
-          纬度 {lat.toFixed(2)}° · 经度 {lng.toFixed(2)}°
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 32, flex: 1 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <input
+              autoFocus
+              placeholder="地点名称，例如：巴黎"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={inputStyle}
+              required
+            />
+            <input
+              placeholder="国家（选填）"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              style={inputStyle}
+            />
+            <label style={fieldLabelStyle}>
+              到访日期
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} required />
+            </label>
+            <textarea
+              placeholder="写点什么…"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={10}
+              style={{ ...inputStyle, flex: 1 }}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <label
+              style={{
+                fontSize: 13,
+                color: "rgba(255,255,255,0.6)",
+                border: "1px dashed rgba(255,255,255,0.3)",
+                padding: 16,
+                textAlign: "center",
+                cursor: "pointer",
+              }}
+            >
+              点击上传照片
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleFiles(e.target.files)}
+                style={{ display: "none" }}
+              />
+            </label>
+
+            {photos.length > 0 && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))",
+                  gap: 8,
+                  overflowY: "auto",
+                }}
+              >
+                {photos.map((src, i) => (
+                  <img key={i} src={src} alt="" style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <input
-          autoFocus
-          placeholder="地点名称，例如：巴黎"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={inputStyle}
-          required
-        />
-        <input
-          placeholder="国家（选填）"
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          style={inputStyle}
-        />
-        <label style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", display: "flex", flexDirection: "column", gap: 6 }}>
-          到访日期
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} required />
-        </label>
-        <textarea
-          placeholder="写点什么…"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={4}
-          style={inputStyle}
-        />
-        <label style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
-          上传照片
-          <input type="file" accept="image/*" multiple onChange={(e) => handleFiles(e.target.files)} style={{ display: "block", marginTop: 6 }} />
-        </label>
-
-        {photos.length > 0 && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {photos.map((src, i) => (
-              <img key={i} src={src} alt="" style={{ width: 64, height: 64, objectFit: "cover" }} />
-            ))}
-          </div>
-        )}
-
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 6 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
           <button
             type="button"
             onClick={onCancel}
-            style={{ font: "inherit", padding: "8px 16px", border: "1.5px solid rgba(255,255,255,0.35)", background: "transparent", color: "#fff", cursor: "pointer" }}
+            style={{ font: "inherit", padding: "10px 20px", border: "1.5px solid rgba(255,255,255,0.35)", background: "transparent", color: "#fff", cursor: "pointer" }}
           >
             取消
           </button>
@@ -124,7 +140,7 @@ export default function AddPlacePopup({ lat, lng, onCancel, onSave }: AddPlacePo
             disabled={busy || !name.trim()}
             style={{
               font: "inherit",
-              padding: "8px 16px",
+              padding: "10px 20px",
               border: "1.5px solid #fff",
               background: "#fff",
               color: "#0a0a0c",
@@ -137,6 +153,6 @@ export default function AddPlacePopup({ lat, lng, onCancel, onSave }: AddPlacePo
           </button>
         </div>
       </form>
-    </div>
+    </DrawerPanel>
   );
 }

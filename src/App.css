@@ -22,6 +22,19 @@
   }
 }
 
+@keyframes drawerSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.drawer-panel {
+  animation: drawerSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 a {
   color: #fff;
   text-decoration: none;

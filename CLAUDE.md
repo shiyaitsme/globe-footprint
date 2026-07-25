@@ -70,6 +70,14 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 **测试这块功能时的一个坑**：`Earth.tsx` 里地球不管有没有聚焦都会持续自转（`EARTH_CONFIG.rotationSpeed`），所以自动化测试里"记住一个屏幕像素坐标，隔几秒再点一次同一个像素"**不代表点到了地球上同一个地理位置**——旋转会让同一个像素对应的经纬度持续漂移，几秒内就可能漂移出 `NEARBY_PLACE_THRESHOLD_KM` 的范围，导致合并检测测出来"没找到附近地点"，看起来像 bug 但其实是测试方法本身的问题。验证合并流程更可靠的办法：连续两次点右下角的 `AddFab`（它用 `SceneApi.getCenterLatLng()`，基于相机朝向算，不受地球贴图旋转影响，两次点出来的经纬度是稳定的），而不是对着地表固定像素点两次。
 
+### 添加/编辑用全屏侧滑抽屉（`DrawerPanel.tsx`），不是居中小弹窗，也没有引入路由
+
+`AddPlacePopup.tsx` / `AddVisitPopup.tsx` 一开始是和 `PlaceTimelinePanel.tsx` 一样的居中小卡片（340px 宽），后来觉得作为核心的记录功能，写长文字、传好几张照片时太挤，改成了从右侧滑入、几乎占满整个视口高度的抽屉（`hud/DrawerPanel.tsx` 提供外层 chrome：遮罩、滑入动画 `App.css` 里的 `drawerSlideIn`、关闭按钮、CornerBrackets，两个表单只负责往里塞 `children`）。表单内容用 `grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))` 做了个左右两栏：左边是文字类字段，右边是照片上传+网格预览，宽度不够时会自动堆叠成单栏。
+
+**这不是路由跳转**——`App.tsx` 里没有引入 `react-router` 之类的库，`DrawerPanel` 本质上还是一个盖在 `Scene` 之上的绝对定位覆盖层，只是比原来的小弹窗大得多、位置在右侧而不是居中。之所以没做成真正带独立 URL 的页面：现在整个 App 全靠 `focusedId` 这类 state 切换视图，没有任何路由基础设施，做真路由是架构级的改动，而当前诉求（写字/传图需要更大空间）用一个大抽屉就能满足，不需要为此引入路由库。如果以后真的需要"可分享链接/前进后退"这类路由能力，再单独评估引入 `react-router`，不要顺手把 `DrawerPanel` 当成路由的替代品继续往上叠功能。
+
+`MergeConfirmDialog.tsx`（"添加为到访 / 作为新地点"的二选一确认）故意没有跟着改成抽屉——它只是个轻量的二选一决策，不涉及长文字/多图录入，维持原来居中小弹窗的体量更合适。以后新增别的"核心录入类"表单，参考 `AddPlacePopup.tsx` 接入 `DrawerPanel`；纯确认/二选一类交互不需要。
+
 ## `EffectComposer` 的 children 数量不能随状态变化
 
 `Scene.tsx` 里 `<EffectComposer>` 曾经这样写：`Bloom` 常驻，`DepthOfField` 只在 `focusedPosition` 有值（即聚焦某颗星球/地球）时才作为第二个 child 挂进去，没聚焦时数组只有一个元素。**这个写法会把 `@react-three/postprocessing` 的渲染循环拖死**——从"聚焦"退回"概览"、`DepthOfField` 被卸载的那一刻，画面会完全冻结在退出前的最后一帧，不再更新（不是变慢，是彻底不再渲染任何新帧），`CameraRig` 的 GSAP 缓动镜头逻辑本身完全正常、状态也正确切换了，只是没有画面能体现出来。复现方式：聚焦地球后用滚轮/拖拽随便动一下镜头，再点"返回宇宙"，旧代码会卡死不动，实测过好几秒到十几秒都不会恢复。
