@@ -8,7 +8,7 @@ import Marker from "./Marker";
 import { vector3ToLatLng } from "../utils/geo";
 import type { Footprint } from "../types";
 
-const EARTH_TEXTURE_URL = "/textures/earth.jpg";
+const EARTH_TEXTURE_URL = "/textures/2k_earth_daymap.jpg";
 
 export const EARTH_RADIUS = EARTH_CONFIG.radius;
 

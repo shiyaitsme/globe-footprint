@@ -44,15 +44,18 @@ src/
     dotMatrix.ts       点阵字体 + 半调点图坐标生成（从设计稿的 JS 逻辑照搬）
     image.ts           上传照片的客户端压缩
     planetTexture.ts   占位星球的程序化贴图生成（equirectangular 画布 + 多层正弦湍流噪声 + 可选极地漩涡）
+    seamlessTextureLoader.ts   占位星球真实贴图的无缝化处理（见下方"占位星球的贴图"）
   planets.ts           地球 + 占位星球的配置（位置、半径、聚焦距离、贴图配色/贴图 URL 等）
 public/
-  textures/earth.jpg                地球贴图
+  textures/2k_earth_daymap.jpg      地球贴图
   textures/planet_A_texture.png     占位星球「星球 A」用的真实贴图
 ```
 
 ## 占位星球的贴图
 
-占位星球默认贴图是纯代码生成的（`planetTexture.ts`），`PlanetConfig` 也支持可选的 `textureUrl` 字段，给了就用 `TextureLoader` 加载真实图片贴图（和 `Earth.tsx` 加载 `earth.jpg` 同一套方式），不再走程序化生成——目前星球 A~E（`planets.ts` 里的 `planet-1` 到 `planet-5`，也就是全部 5 颗占位星球）都配了这个字段，分别用 `public/textures/planet_A_texture.png` 到 `planet_E_texture.png`。这几张贴图不是严格的 equirectangular 全景图（比如 `planet_B_texture.png` 其实是一张带球面弧度的照片），直接当球体贴图用会有轻微极点畸变，但视觉上不明显，暂时不需要特殊处理。
+占位星球默认贴图是纯代码生成的（`planetTexture.ts`），`PlanetConfig` 也支持可选的 `textureUrl` 字段，给了就用真实图片贴图，不再走程序化生成——目前星球 A~E（`planets.ts` 里的 `planet-1` 到 `planet-5`，也就是全部 5 颗占位星球）都配了这个字段，分别用 `public/textures/planet_A_texture.png` 到 `planet_E_texture.png`。
+
+这几张贴图不是严格的 equirectangular 全景图（比如 `planet_B_texture.png` 其实是一张带球面弧度的照片，不是能无缝 360° 环绕的贴图），所以加载时用的是 `utils/seamlessTextureLoader.ts` 里的 `SeamlessEquirectTextureLoader`，不是 three.js 自带的 `TextureLoader`——它会截取原图中间最清晰的一段镜像铺满整张画布再贴图，避免球面上出现明显的接缝硬线（细节见该文件顶部注释）。`Earth.tsx` 的地球贴图不用这套处理，因为它本来就是真实的等距柱状投影图，直接用 `TextureLoader` 加载即可。
 
 ## 点其他星球之后要接功能怎么做
 
@@ -79,5 +82,5 @@ npm run build
 
 ## 素材来源
 
-- 地球贴图 `public/textures/earth.jpg` 取自 [three-globe](https://github.com/vasturiano/three-globe) 项目自带的示例贴图（基于 NASA Blue Marble 影像）。
+- 地球贴图 `public/textures/2k_earth_daymap.jpg` 由用户提供（NASA Blue Marble 影像的等距柱状投影日间图）。
 - 星球贴图 `public/textures/planet_A_texture.png` 到 `planet_E_texture.png` 均由用户提供。

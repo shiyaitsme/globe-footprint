@@ -35,7 +35,7 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 `SeamlessEquirectTextureLoader` 的做法：截取原图中间最清晰的一段（`CORE_FRACTION = 0.6`，即中间 60% 宽度），镜像铺满整张画布再拿去贴图，这样球面的"环绕接缝"和"镜像对折缝"两处都能严丝合缝对上（镜像后接缝两侧本来就是同一列像素）。代价是星球背面会是正面的镜像重复，不是独一无二的纹理——对这种装饰性的占位星球来说完全够用，不要为了追求"背面也不同"就换回 `TextureLoader`，会导致接缝问题重新出现。
 
-`Earth.tsx` 的 `earth.jpg` **不**用这套 loader——它是真实的 NASA Blue Marble 等距柱状投影图，本来就无缝，镜像裁切反而会把地理位置搞乱，继续用普通 `TextureLoader` 加载即可。
+`Earth.tsx` 的地球贴图（`2k_earth_daymap.jpg`）**不**用这套 loader——它是真实的 NASA Blue Marble 等距柱状投影图，本来就无缝，镜像裁切反而会把地理位置搞乱，继续用普通 `TextureLoader` 加载即可。
 
 ## 地球自转 + 点击经纬度：旋转补偿
 
