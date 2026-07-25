@@ -73,6 +73,7 @@ export const PLACEHOLDER_PLANETS: PlanetConfig[] = [
     focusDistance: 5.5,
     rotationSpeed: 0.06,
     palette: ["#f0a888", "#e88868", "#d868a0", "#f0c8a8", "#e8a888"],
+    textureUrl: "/textures/planet_E_texture.png",
   },
 ];
 

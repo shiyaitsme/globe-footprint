@@ -52,7 +52,7 @@ public/
 
 ## 占位星球的贴图
 
-占位星球默认贴图是纯代码生成的（`planetTexture.ts`），`PlanetConfig` 也支持可选的 `textureUrl` 字段，给了就用 `TextureLoader` 加载真实图片贴图（和 `Earth.tsx` 加载 `earth.jpg` 同一套方式），不再走程序化生成——目前星球 A~D（`planets.ts` 里的 `planet-1` 到 `planet-4`）都配了这个字段，分别用 `public/textures/planet_A_texture.png` 到 `planet_D_texture.png`；星球 E（`planet-5`）还没有真实贴图，仍走程序化生成。这几张贴图不是严格的 equirectangular 全景图（比如 `planet_B_texture.png` 其实是一张带球面弧度的照片），直接当球体贴图用会有轻微极点畸变，但视觉上不明显，暂时不需要特殊处理。
+占位星球默认贴图是纯代码生成的（`planetTexture.ts`），`PlanetConfig` 也支持可选的 `textureUrl` 字段，给了就用 `TextureLoader` 加载真实图片贴图（和 `Earth.tsx` 加载 `earth.jpg` 同一套方式），不再走程序化生成——目前星球 A~E（`planets.ts` 里的 `planet-1` 到 `planet-5`，也就是全部 5 颗占位星球）都配了这个字段，分别用 `public/textures/planet_A_texture.png` 到 `planet_E_texture.png`。这几张贴图不是严格的 equirectangular 全景图（比如 `planet_B_texture.png` 其实是一张带球面弧度的照片），直接当球体贴图用会有轻微极点畸变，但视觉上不明显，暂时不需要特殊处理。
 
 ## 点其他星球之后要接功能怎么做
 
@@ -80,4 +80,4 @@ npm run build
 ## 素材来源
 
 - 地球贴图 `public/textures/earth.jpg` 取自 [three-globe](https://github.com/vasturiano/three-globe) 项目自带的示例贴图（基于 NASA Blue Marble 影像）。
-- 星球贴图 `public/textures/planet_A_texture.png` 到 `planet_D_texture.png` 均由用户提供。
+- 星球贴图 `public/textures/planet_A_texture.png` 到 `planet_E_texture.png` 均由用户提供。

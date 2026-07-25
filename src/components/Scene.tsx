@@ -7,7 +7,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import Earth, { EARTH_RADIUS } from "./Earth";
 import Planet from "./Planet";
 import CameraRig from "./CameraRig";
-import { PLACEHOLDER_PLANETS, OVERVIEW_CAMERA_POSITION, getPlanetConfig } from "../planets";
+import { EARTH_CONFIG, PLACEHOLDER_PLANETS, OVERVIEW_CAMERA_POSITION, getPlanetConfig } from "../planets";
 import { vector3ToLatLng } from "../utils/geo";
 import type { Footprint } from "../types";
 
@@ -103,20 +103,13 @@ export default function Scene({
       <CameraRig controlsRef={controlsRef} focusedId={focusedId} footprintTarget={footprintTarget} />
       {apiRef && <ApiBridge apiRef={apiRef} />}
       <EffectComposer>
-        {[
-          <Bloom key="bloom" luminanceThreshold={0.25} luminanceSmoothing={0.9} intensity={0.6} mipmapBlur />,
-          ...(focusedPosition
-            ? [
-                <DepthOfField
-                  key="dof"
-                  target={focusedPosition}
-                  worldFocusRange={3.5}
-                  bokehScale={4}
-                  resolutionScale={0.5}
-                />,
-              ]
-            : []),
-        ]}
+        <Bloom luminanceThreshold={0.25} luminanceSmoothing={0.9} intensity={0.6} mipmapBlur />
+        <DepthOfField
+          target={focusedPosition ?? EARTH_CONFIG.position}
+          worldFocusRange={3.5}
+          bokehScale={focusedPosition ? 4 : 0}
+          resolutionScale={0.5}
+        />
       </EffectComposer>
     </Canvas>
   );

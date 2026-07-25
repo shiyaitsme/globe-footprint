@@ -41,6 +41,16 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 `utils/geoStats.ts` 的大洲归类（`classifyContinent`）是拍脑袋的经纬度矩形判断，不是真实的地理边界数据，只分"亚洲/欧洲/其他"三档，和设计稿的三档分布卡对应。以后如果要做更细的地区统计，这里需要换成真正的地理数据或反向地理编码。
 
+## `EffectComposer` 的 children 数量不能随状态变化
+
+`Scene.tsx` 里 `<EffectComposer>` 曾经这样写：`Bloom` 常驻，`DepthOfField` 只在 `focusedPosition` 有值（即聚焦某颗星球/地球）时才作为第二个 child 挂进去，没聚焦时数组只有一个元素。**这个写法会把 `@react-three/postprocessing` 的渲染循环拖死**——从"聚焦"退回"概览"、`DepthOfField` 被卸载的那一刻，画面会完全冻结在退出前的最后一帧，不再更新（不是变慢，是彻底不再渲染任何新帧），`CameraRig` 的 GSAP 缓动镜头逻辑本身完全正常、状态也正确切换了，只是没有画面能体现出来。复现方式：聚焦地球后用滚轮/拖拽随便动一下镜头，再点"返回宇宙"，旧代码会卡死不动，实测过好几秒到十几秒都不会恢复。
+
+修复方式：`Bloom` 和 `DepthOfField` **两个 effect 永远都挂载着**，不聚焦时不要把 `DepthOfField` 从 children 里拿掉，而是把它的 `bokehScale` 设成 `0`（`target` 给个默认值比如 `EARTH_CONFIG.position`，反正 `bokehScale=0` 时不产生任何虚焦，target 给什么都看不出来）。以后如果还要加别的后处理 effect，同样的原则：**effect 的挂载数量/顺序要保持稳定，用 props 控制强弱，不要用条件渲染控制有无**。
+
+## 相机缓动（`CameraRig.tsx`）：`flyTo` 每次都要从"当前真实状态"起飞
+
+`CameraRig.tsx` 用一个持久化的 `tween`（`useRef` 存的普通对象，`gsap.to()` 直接对它做数值补间）来驱动 `camera.position` 和 `controls.target`。这个 `tween` 只在**自己触发的补间过程中**被更新——如果 GSAP 补间结束后 `controls.enabled` 恢复为 `true`，用户又用鼠标自由拖拽/滚轮缩放了一阵（这个场景下 `enablePan={false}`，所以 `controls.target` 不会被用户操作改变，但 `camera.position` 会），下一次调用 `flyTo()` 时，如果直接从 `tween` 存的旧数值开始补间，这个旧数值已经和用户实际看到的镜头位置对不上了。所以 `flyTo()` 一开始必须先把 `tween.px/py/pz`（以及 `tx/ty/tz`）从 `camera.position` / `controls.target` 的**当前实际值**重新同步一遍，再开始新的补间，不能假设 `tween` 里存的还是准的。同一个地方还顺手 flush 了一下 OrbitControls 可能残留的阻尼惯性（临时关掉 `enableDamping` 调一次 `update()` 再恢复），避免它在补间过程中继续自己拽相机。
+
 ## 测试环境的一个坑（跟代码无关，纯粹是这个沙盒环境的限制）
 
-在这个 headless Chromium + Playwright 的沙盒里，WebGL 是 SwiftShader 软件渲染（没有真实 GPU），加上后处理（Bloom/DepthOfField）之后帧率会掉到个位数，甚至偶尔观察到相机动画的最终状态"飞错地方"。已经验证过这是纯粹的软件渲染性能问题，不是相机/动画逻辑的 bug（同样的操作序列，关掉后处理后连续多次测试，相机都精确停在预期位置）。如果以后调后处理相关的代码，测试时得留意：这个环境测出来的帧率/动画表现不代表真实设备，不要据此去砍功能。
+在这个 headless Chromium + Playwright 的沙盒里，WebGL 是 SwiftShader 软件渲染（没有真实 GPU），加上后处理（Bloom/DepthOfField）之后帧率会掉到个位数。如果测试时发现相机动画看起来"没到位"，先耐心多等几秒再截图排除纯粹的渲染慢——但**"卡死不动"和"渲染慢"不是一回事**：上面 `EffectComposer` 那条就是一个真实存在过的 bug，在这个慢速沙盒里第一次排查时被误判成"纯粹是环境渲染慢，等久一点就好"，直到真实用户在真实设备上复现出"点返回宇宙后画面永久卡死"才发现是渲染循环真的被冻住了、根本不会再更新，不管等多久截图都长得一样。以后遇到类似"相机好像没动"的现象，除了等久一点重新截图，也要检查连续多张截图是不是**逐帧完全不变**（那大概率是真 bug，渲染循环没在跑），还是**在缓慢但持续地变化**（那大概率只是这个环境软件渲染慢）。

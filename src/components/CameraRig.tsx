@@ -25,7 +25,36 @@ export default function CameraRig({ controlsRef, focusedId, footprintTarget }: C
 
   const flyTo = (position: Vector3, lookAt: Vector3, duration = 1.6) => {
     const controls = controlsRef.current;
-    if (controls) controls.enabled = false;
+
+    if (controls) {
+      controls.enabled = false;
+      // Flush any residual rotate/zoom damping momentum left over from the
+      // user's last OrbitControls drag/scroll — otherwise it keeps nudging
+      // camera.position on its own every frame (enabled=false only blocks
+      // *new* input, it doesn't stop already-queued damping inertia from
+      // still being applied), fighting the tween we're about to start.
+      const hadDamping = controls.enableDamping;
+      controls.enableDamping = false;
+      controls.update();
+      controls.enableDamping = hadDamping;
+    }
+
+    // Resync from the live camera/controls state before animating. The tween
+    // object otherwise only remembers where the *previous* flight ended, so
+    // if the user free-rotated/zoomed via OrbitControls in between flights
+    // (allowed once a flight's onComplete re-enables controls), camera.position
+    // has since drifted away from tween.px/py/pz without us knowing — the next
+    // flyTo would then jump from that stale, no-longer-accurate starting point
+    // instead of smoothly continuing from wherever the camera actually is.
+    tween.px = camera.position.x;
+    tween.py = camera.position.y;
+    tween.pz = camera.position.z;
+    if (controls) {
+      tween.tx = controls.target.x;
+      tween.ty = controls.target.y;
+      tween.tz = controls.target.z;
+    }
+
     gsap.killTweensOf(tween);
     gsap.to(tween, {
       px: position.x,
