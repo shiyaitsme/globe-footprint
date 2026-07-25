@@ -1,4 +1,4 @@
-import type { Footprint } from "../types";
+import type { Place } from "../types";
 
 export type ContinentBucket = "asia" | "europe" | "other";
 
@@ -14,12 +14,17 @@ export interface DistributionStats {
   other: number;
 }
 
-export function computeDistribution(footprints: Footprint[]): DistributionStats {
+/** 每次到访都算一次分布贡献（同一个地点去得越多次，占比越高） */
+export function computeDistribution(places: Place[]): DistributionStats {
   const counts: DistributionStats = { asia: 0, europe: 0, other: 0 };
-  for (const f of footprints) {
-    counts[classifyContinent(f.lat, f.lng)] += 1;
+  let total = 0;
+  for (const place of places) {
+    for (const _visit of place.visits) {
+      counts[classifyContinent(place.lat, place.lng)] += 1;
+      total += 1;
+    }
   }
-  const total = footprints.length || 1;
+  total = total || 1;
   return {
     asia: Math.round((counts.asia / total) * 100),
     europe: Math.round((counts.europe / total) * 100),
@@ -33,12 +38,13 @@ export interface SummaryStats {
   footprints: number;
 }
 
-export function computeSummary(footprints: Footprint[]): SummaryStats {
-  const countries = new Set(footprints.map((f) => f.country.trim()).filter(Boolean));
-  const cities = new Set(footprints.map((f) => f.name.trim()).filter(Boolean));
+export function computeSummary(places: Place[]): SummaryStats {
+  const countries = new Set(places.map((p) => p.country.trim()).filter(Boolean));
+  const cities = new Set(places.map((p) => p.name.trim()).filter(Boolean));
+  const footprints = places.reduce((sum, p) => sum + p.visits.length, 0);
   return {
     countries: countries.size,
     cities: cities.size,
-    footprints: footprints.length,
+    footprints,
   };
 }

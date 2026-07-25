@@ -6,7 +6,7 @@ import type { ThreeEvent } from "@react-three/fiber";
 import { EARTH_CONFIG, EARTH_DIMMED_POSITION, FOCUS_DIM_OPACITY, FOCUS_DIM_SCALE, FOCUS_LERP_SPEED } from "../planets";
 import Marker from "./Marker";
 import { vector3ToLatLng } from "../utils/geo";
-import type { Footprint } from "../types";
+import type { Place } from "../types";
 
 const EARTH_TEXTURE_URL = "/textures/2k_earth_daymap.jpg";
 
@@ -21,20 +21,20 @@ function unrotateY(point: Vector3, angle: number): Vector3 {
 interface EarthProps {
   focused: boolean;
   dimmed: boolean;
-  footprints: Footprint[];
+  places: Place[];
   onSelect: () => void;
   onSurfaceClick: (lat: number, lng: number) => void;
-  onSelectFootprint: (footprint: Footprint) => void;
-  renderMarker?: (footprint: Footprint) => ReactNode;
+  onSelectPlace: (place: Place) => void;
+  renderMarker?: (place: Place) => ReactNode;
 }
 
 export default function Earth({
   focused,
   dimmed,
-  footprints,
+  places,
   onSelect,
   onSurfaceClick,
-  onSelectFootprint,
+  onSelectPlace,
   renderMarker,
 }: EarthProps) {
   const groupRef = useRef<Group>(null);
@@ -85,11 +85,11 @@ export default function Earth({
         <meshStandardMaterial ref={materialRef} map={texture} roughness={0.85} metalness={0} transparent />
       </mesh>
       {focused &&
-        footprints.map((footprint) =>
+        places.map((place) =>
           renderMarker ? (
-            <group key={footprint.id}>{renderMarker(footprint)}</group>
+            <group key={place.id}>{renderMarker(place)}</group>
           ) : (
-            <Marker key={footprint.id} footprint={footprint} radius={EARTH_RADIUS} onSelect={onSelectFootprint} />
+            <Marker key={place.id} place={place} radius={EARTH_RADIUS} onSelect={onSelectPlace} />
           )
         )}
     </group>

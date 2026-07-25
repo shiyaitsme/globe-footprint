@@ -9,21 +9,21 @@ import Planet from "./Planet";
 import CameraRig from "./CameraRig";
 import { EARTH_CONFIG, PLACEHOLDER_PLANETS, OVERVIEW_CAMERA_POSITION, getPlanetConfig } from "../planets";
 import { vector3ToLatLng } from "../utils/geo";
-import type { Footprint } from "../types";
+import type { Place } from "../types";
 
 export interface SceneApi {
   getCenterLatLng: () => { lat: number; lng: number };
 }
 
 interface SceneProps {
-  footprints: Footprint[];
+  places: Place[];
   focusedId: string | null;
   footprintTarget: { lat: number; lng: number } | null;
   onSurfaceClick: (lat: number, lng: number) => void;
-  onSelectFootprint: (footprint: Footprint) => void;
+  onSelectPlace: (place: Place) => void;
   onFocusPlanet: (id: string) => void;
   onExitFocus: () => void;
-  renderMarker?: (footprint: Footprint) => ReactNode;
+  renderMarker?: (place: Place) => ReactNode;
   apiRef?: React.MutableRefObject<SceneApi | null>;
 }
 
@@ -44,11 +44,11 @@ function ApiBridge({ apiRef }: { apiRef: React.MutableRefObject<SceneApi | null>
 }
 
 export default function Scene({
-  footprints,
+  places,
   focusedId,
   footprintTarget,
   onSurfaceClick,
-  onSelectFootprint,
+  onSelectPlace,
   onFocusPlanet,
   onExitFocus,
   renderMarker,
@@ -75,10 +75,10 @@ export default function Scene({
         <Earth
           focused={focusedId === "earth"}
           dimmed={focusedId !== null && focusedId !== "earth"}
-          footprints={footprints}
+          places={places}
           onSelect={() => onFocusPlanet("earth")}
           onSurfaceClick={onSurfaceClick}
-          onSelectFootprint={onSelectFootprint}
+          onSelectPlace={onSelectPlace}
           renderMarker={renderMarker}
         />
         {PLACEHOLDER_PLANETS.map((planet) => (

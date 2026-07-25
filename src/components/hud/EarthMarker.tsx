@@ -1,15 +1,15 @@
 import { Html } from "@react-three/drei";
 import { latLngToVector3 } from "../../utils/geo";
-import type { Footprint } from "../../types";
+import type { Place } from "../../types";
 
 interface EarthMarkerProps {
-  footprint: Footprint;
+  place: Place;
   radius: number;
-  onSelect: (footprint: Footprint) => void;
+  onSelect: (place: Place) => void;
 }
 
-export default function EarthMarker({ footprint, radius, onSelect }: EarthMarkerProps) {
-  const position = latLngToVector3(footprint.lat, footprint.lng, radius + 0.02);
+export default function EarthMarker({ place, radius, onSelect }: EarthMarkerProps) {
+  const position = latLngToVector3(place.lat, place.lng, radius + 0.02);
 
   return (
     <Html position={position} center distanceFactor={6}>
@@ -27,7 +27,7 @@ export default function EarthMarker({ footprint, radius, onSelect }: EarthMarker
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            onSelect(footprint);
+            onSelect(place);
           }}
           style={{
             position: "relative",
