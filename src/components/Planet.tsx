@@ -89,7 +89,7 @@ function PlanetBody({ config, dimmed, onSelect, texture }: PlanetProps & { textu
     <group ref={groupRef} position={config.position}>
       <mesh ref={meshRef} onClick={handleClick}>
         <sphereGeometry args={[config.radius, 48, 48]} />
-        <meshStandardMaterial ref={materialRef} map={texture} roughness={0.6} metalness={0.05} transparent />
+        <meshStandardMaterial ref={materialRef} map={texture} roughness={0.5} metalness={0} transparent />
       </mesh>
     </group>
   );

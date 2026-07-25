@@ -42,6 +42,7 @@ export const PLACEHOLDER_PLANETS: PlanetConfig[] = [
     focusDistance: 7.5,
     rotationSpeed: 0.035,
     palette: ["#0f1f4d", "#2a4d8f", "#4a7ab8", "#7ab8d8", "#bfe3ea"],
+    textureUrl: "/textures/planet_B_texture.png",
   },
   {
     id: "planet-3",
@@ -52,6 +53,7 @@ export const PLACEHOLDER_PLANETS: PlanetConfig[] = [
     rotationSpeed: 0.07,
     palette: ["#2a5c4a", "#6ba888", "#a8c890", "#8fb8c8", "#9888c8"],
     vortex: true,
+    textureUrl: "/textures/planet_C_texture.png",
   },
   {
     id: "planet-4",
@@ -61,6 +63,7 @@ export const PLACEHOLDER_PLANETS: PlanetConfig[] = [
     focusDistance: 6.5,
     rotationSpeed: 0.04,
     palette: ["#e8dcc0", "#d8c89a", "#c8d8d0", "#a8c8d8", "#e0d8b8"],
+    textureUrl: "/textures/planet_D_texture.png",
   },
   {
     id: "planet-5",
