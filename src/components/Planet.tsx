@@ -6,6 +6,7 @@ import type { PlanetConfig } from "../planets";
 import { FOCUS_DIM_OPACITY, FOCUS_DIM_SCALE, FOCUS_LERP_SPEED, FOCUS_PUSH_FACTOR } from "../planets";
 import { generateGasGiantTexture } from "../utils/planetTexture";
 import { SeamlessEquirectTextureLoader } from "../utils/seamlessTextureLoader";
+import { isClickNotDrag } from "../utils/pointer";
 
 const DIMMED_TINT = new Color("#7a7a7a");
 const NORMAL_TINT = new Color("#ffffff");
@@ -51,6 +52,7 @@ function PlanetBody({ config, dimmed, onSelect, texture }: PlanetProps & { textu
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
   const materialRef = useRef<MeshStandardMaterial>(null);
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
 
   const basePosition = useMemo(() => new Vector3(...config.position), [config.position]);
   const pushedPosition = useMemo(
@@ -81,14 +83,20 @@ function PlanetBody({ config, dimmed, onSelect, texture }: PlanetProps & { textu
     }
   });
 
+  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
+    pointerDownPos.current = { x: event.clientX, y: event.clientY };
+  };
+
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
+    const start = pointerDownPos.current;
+    if (start && !isClickNotDrag(start.x, start.y, event.clientX, event.clientY)) return;
     onSelect(config.id);
   };
 
   return (
     <group ref={groupRef} position={config.position}>
-      <mesh ref={meshRef} onClick={handleClick}>
+      <mesh ref={meshRef} onPointerDown={handlePointerDown} onClick={handleClick}>
         <sphereGeometry args={[config.radius, 48, 48]} />
         <meshStandardMaterial ref={materialRef} map={texture} roughness={0.5} metalness={0} transparent />
       </mesh>
