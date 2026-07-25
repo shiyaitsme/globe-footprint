@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import DrawerPanel from "./DrawerPanel";
 import { fileToCompressedDataUrl } from "../../utils/image";
@@ -33,6 +33,7 @@ export default function AddVisitPopup({ place, onCancel, onSave }: AddVisitPopup
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -55,6 +56,7 @@ export default function AddVisitPopup({ place, onCancel, onSave }: AddVisitPopup
       title="新增到访"
       subtitle={`${place.country ? `${place.country} · ` : ""}${place.name}`}
       onClose={onCancel}
+      onOpened={() => dateInputRef.current?.focus()}
     >
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, gap: 24 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 32, flex: 1 }}>
@@ -62,7 +64,7 @@ export default function AddVisitPopup({ place, onCancel, onSave }: AddVisitPopup
             <label style={fieldLabelStyle}>
               到访日期
               <input
-                autoFocus
+                ref={dateInputRef}
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}

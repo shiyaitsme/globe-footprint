@@ -25,14 +25,16 @@
 @keyframes drawerSlideIn {
   from {
     transform: translateX(100%);
+    opacity: 0.5;
   }
   to {
     transform: translateX(0);
+    opacity: 1;
   }
 }
 
 .drawer-panel {
-  animation: drawerSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: drawerSlideIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 a {

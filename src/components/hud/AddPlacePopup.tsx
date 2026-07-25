@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import DrawerPanel from "./DrawerPanel";
 import { fileToCompressedDataUrl } from "../../utils/image";
@@ -35,6 +35,7 @@ export default function AddPlacePopup({ lat, lng, onCancel, onSave }: AddPlacePo
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -58,12 +59,13 @@ export default function AddPlacePopup({ lat, lng, onCancel, onSave }: AddPlacePo
       title="添加新地点"
       subtitle={`纬度 ${lat.toFixed(2)}° · 经度 ${lng.toFixed(2)}°`}
       onClose={onCancel}
+      onOpened={() => nameInputRef.current?.focus()}
     >
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, gap: 24 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 32, flex: 1 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <input
-              autoFocus
+              ref={nameInputRef}
               placeholder="地点名称，例如：巴黎"
               value={name}
               onChange={(e) => setName(e.target.value)}

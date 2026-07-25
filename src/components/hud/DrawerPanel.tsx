@@ -5,11 +5,13 @@ interface DrawerPanelProps {
   title: string;
   subtitle?: ReactNode;
   onClose: () => void;
+  /** 滑入动画结束后触发——用来在这之后再 focus 输入框，避免抢焦点和滑入动画打架显得卡顿 */
+  onOpened?: () => void;
   children: ReactNode;
 }
 
 /** 核心的"添加/编辑"表单用这个全屏侧滑抽屉，而不是居中小弹窗——给照片墙、长文字留够空间 */
-export default function DrawerPanel({ title, subtitle, onClose, children }: DrawerPanelProps) {
+export default function DrawerPanel({ title, subtitle, onClose, onOpened, children }: DrawerPanelProps) {
   return (
     <div
       style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)", zIndex: 20 }}
@@ -17,6 +19,7 @@ export default function DrawerPanel({ title, subtitle, onClose, children }: Draw
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        onAnimationEnd={onOpened}
         className="drawer-panel"
         style={{
           position: "absolute",
