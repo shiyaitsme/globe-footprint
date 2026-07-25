@@ -2,12 +2,13 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import CornerBrackets from "./CornerBrackets";
 import { fileToCompressedDataUrl } from "../../utils/image";
+import { todayDateString } from "../../hooks/usePlaces";
+import type { Place } from "../../types";
 
-interface AddFootprintPopupProps {
-  lat: number;
-  lng: number;
+interface AddVisitPopupProps {
+  place: Place;
   onCancel: () => void;
-  onSave: (data: { name: string; country: string; notes: string; photos: string[] }) => void;
+  onSave: (data: { date: string; notes: string; photos: string[] }) => void;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -19,9 +20,8 @@ const inputStyle: React.CSSProperties = {
   resize: "vertical",
 };
 
-export default function AddFootprintPopup({ lat, lng, onCancel, onSave }: AddFootprintPopupProps) {
-  const [name, setName] = useState("");
-  const [country, setCountry] = useState("");
+export default function AddVisitPopup({ place, onCancel, onSave }: AddVisitPopupProps) {
+  const [date, setDate] = useState(todayDateString());
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -39,8 +39,7 @@ export default function AddFootprintPopup({ lat, lng, onCancel, onSave }: AddFoo
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (!name.trim()) return;
-    onSave({ name: name.trim(), country: country.trim(), notes: notes.trim(), photos });
+    onSave({ date, notes: notes.trim(), photos });
   };
 
   return (
@@ -66,27 +65,18 @@ export default function AddFootprintPopup({ lat, lng, onCancel, onSave }: AddFoo
         }}
       >
         <CornerBrackets size={16} />
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>添加足迹</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>新增到访</div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: -8 }}>
-          纬度 {lat.toFixed(2)}° · 经度 {lng.toFixed(2)}°
+          {place.country ? `${place.country} · ` : ""}
+          {place.name}
         </div>
 
-        <input
-          autoFocus
-          placeholder="地点名称，例如：巴黎"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={inputStyle}
-          required
-        />
-        <input
-          placeholder="国家（选填）"
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          style={inputStyle}
-        />
+        <label style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", display: "flex", flexDirection: "column", gap: 6 }}>
+          到访日期
+          <input autoFocus type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} required />
+        </label>
         <textarea
-          placeholder="写点什么…"
+          placeholder="这次来的感受…"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={4}
@@ -115,7 +105,7 @@ export default function AddFootprintPopup({ lat, lng, onCancel, onSave }: AddFoo
           </button>
           <button
             type="submit"
-            disabled={busy || !name.trim()}
+            disabled={busy}
             style={{
               font: "inherit",
               padding: "8px 16px",
@@ -123,8 +113,8 @@ export default function AddFootprintPopup({ lat, lng, onCancel, onSave }: AddFoo
               background: "#fff",
               color: "#0a0a0c",
               fontWeight: 700,
-              cursor: busy || !name.trim() ? "not-allowed" : "pointer",
-              opacity: busy || !name.trim() ? 0.6 : 1,
+              cursor: busy ? "not-allowed" : "pointer",
+              opacity: busy ? 0.6 : 1,
             }}
           >
             {busy ? "处理中…" : "保存"}

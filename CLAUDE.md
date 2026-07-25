@@ -43,11 +43,28 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 点击地表算经纬度时（`handleClick` 里），必须先把 raycast 拿到的世界坐标点按当前 `groupRef.current.rotation.y` 反向旋转（`unrotateY`），再喂给 `vector3ToLatLng`，否则算出来的经纬度会随着自转累积的角度越转越偏。这两处（旋转挂在哪个节点上 + 点击时的反向旋转）必须配套修改，改一半会导致"标记显示位置正确，但新加的足迹点错位"这种不容易发现的 bug。
 
-## 数据模型
+## 数据模型：`Place` + `Visit` + `VisitComment`（不再是扁平的 `Footprint`）
 
-`Footprint`（`src/types.ts`）在某次迭代里加了可选的 `country` 字段（给 HUD 首页的国家/城市统计用）。`useFootprints.ts` 的 `load()` 会给旧数据（localStorage 里没有 `country` 字段的）补一个空字符串默认值——加新的必填字段时记得同样处理旧数据兼容，不要假设 localStorage 里的数据一定符合最新的 `Footprint` 类型。
+早期版本里一个 `Footprint` = 地球上一个点 + 一个日期 + 一组照片/文字，一次到访就是一个 marker。为了支持"同一个地方去过好几次，点开显示一条完整 timeline"，数据模型已经改成三层（`src/types.ts`）：
 
-`utils/geoStats.ts` 的大洲归类（`classifyContinent`）是拍脑袋的经纬度矩形判断，不是真实的地理边界数据，只分"亚洲/欧洲/其他"三档，和设计稿的三档分布卡对应。以后如果要做更细的地区统计，这里需要换成真正的地理数据或反向地理编码。
+- `Place`：地球上的一个地点（`name` / `country` / `lat` / `lng` + `visits: Visit[]`）。**一个地点只对应一个 marker**，不管去过多少次。
+- `Visit`：一次具体到访（`date` 到访日期 `YYYY-MM-DD` / `notes` / `photos` / `createdAt` 记录创建时间 / `comments: VisitComment[]`）。
+- `VisitComment`：挂在某一次 `Visit` 下面的"回顾式"评论（比如多年后回看某次旅行补的照片/感想），有自己独立的 `createdAt`（评论本身写于何时，不是被回顾那次到访的日期）。回顾评论**只挂在具体某次到访上**，不挂在整个地点上，渲染时也刻意用更淡、缩进、左边框的样式和主时间线区分开，不要把两者的展示逻辑混在一起。
+
+`src/hooks/usePlaces.ts`（替代旧的 `useFootprints.ts`）负责存储和迁移：`load()` 里会检测 localStorage 数据是不是旧的扁平 `Footprint[]`（没有 `visits` 字段），有的话自动把每条旧记录转成一个只有 1 次到访的 `Place`。以后再加字段，记得同样考虑旧数据兼容（不要假设 localStorage 里的数据一定符合最新类型）。
+
+`src/utils/geoStats.ts` 的 `computeSummary`/`computeDistribution` 现在基于 `Place[]`：国家/城市数按**地点**去重，`footprints`（HUD 上"足迹"这个数字）按**到访次数**（所有地点的 `visits.length` 求和）统计，两者故意不是同一个维度。大洲归类（`classifyContinent`）还是拍脑袋的经纬度矩形判断，不是真实地理边界数据，以后要做更细的地区统计需要换成真正的地理数据或反向地理编码。
+
+### 新增到访 = "点附近已有地点"合并检测
+
+再次到访一个已有地点时（比如又去了一次东京），入口不是在时间线面板里放个固定的"+"按钮，而是复用"点地球加足迹"这个已有交互：`utils/geo.ts` 的 `findNearbyPlace(places, lat, lng)` 用 haversine 距离（`NEARBY_PLACE_THRESHOLD_KM = 150`，大致一个城市/都会区的范围）在点击点附近找已有地点。`App.tsx` 的 `startAddingAt(lat, lng)` 是唯一入口，`onSurfaceClick`（点地表）和 `handleFabClick`（点右下角 + 用当前镜头中心）都走这个函数：
+
+- 附近没有地点 → 直接打开 `AddPlacePopup`（新地点：名称+国家+日期+文字+照片）。
+- 附近有地点 → 弹 `MergeConfirmDialog`，选"添加为到访"就打开 `AddVisitPopup`（只填日期+文字+照片，挂到已有 `Place.visits`），选"作为新地点"就还是走 `AddPlacePopup`。
+
+`PlaceTimelinePanel.tsx` 点开某个 marker 后展示的就是该 `Place` 的完整 timeline：年份用 `utils/timeline.ts` 的 `groupVisitsByYear` 分组，默认全部折叠（大号加粗年份数字），点击展开显示该年内每次到访（日期徽标越小越淡，缩略图簇 + 文字，参考朋友圈但张数不固定），点缩略图用 `Lightbox.tsx` 看大图，评论区在每条到访下面单独渲染。
+
+**测试这块功能时的一个坑**：`Earth.tsx` 里地球不管有没有聚焦都会持续自转（`EARTH_CONFIG.rotationSpeed`），所以自动化测试里"记住一个屏幕像素坐标，隔几秒再点一次同一个像素"**不代表点到了地球上同一个地理位置**——旋转会让同一个像素对应的经纬度持续漂移，几秒内就可能漂移出 `NEARBY_PLACE_THRESHOLD_KM` 的范围，导致合并检测测出来"没找到附近地点"，看起来像 bug 但其实是测试方法本身的问题。验证合并流程更可靠的办法：连续两次点右下角的 `AddFab`（它用 `SceneApi.getCenterLatLng()`，基于相机朝向算，不受地球贴图旋转影响，两次点出来的经纬度是稳定的），而不是对着地表固定像素点两次。
 
 ## `EffectComposer` 的 children 数量不能随状态变化
 

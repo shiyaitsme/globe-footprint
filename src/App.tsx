@@ -11,37 +11,53 @@ import AddFab from "./components/hud/AddFab";
 import UniverseHint from "./components/hud/UniverseHint";
 import PlanetPanel from "./components/hud/PlanetPanel";
 import BackButton from "./components/hud/BackButton";
-import AddFootprintPopup from "./components/hud/AddFootprintPopup";
-import FootprintPopup from "./components/hud/FootprintPopup";
-import { useFootprints } from "./hooks/useFootprints";
+import AddPlacePopup from "./components/hud/AddPlacePopup";
+import AddVisitPopup from "./components/hud/AddVisitPopup";
+import MergeConfirmDialog from "./components/hud/MergeConfirmDialog";
+import PlaceTimelinePanel from "./components/hud/PlaceTimelinePanel";
+import { usePlaces } from "./hooks/usePlaces";
 import { computeDistribution, computeSummary } from "./utils/geoStats";
+import { findNearbyPlace } from "./utils/geo";
 import { EARTH_ID, getPlanetConfig } from "./planets";
-import type { Footprint } from "./types";
+import type { Place } from "./types";
 import "./App.css";
 
 export default function App() {
-  const { footprints, addFootprint, updateFootprint, removeFootprint } = useFootprints();
+  const { places, addPlace, addVisit, removeVisit, addComment } = usePlaces();
   const [pendingLocation, setPendingLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mergeCandidate, setMergeCandidate] = useState<{ place: Place; lat: number; lng: number } | null>(null);
+  const [visitTargetPlace, setVisitTargetPlace] = useState<Place | null>(null);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [footprintTarget, setFootprintTarget] = useState<{ lat: number; lng: number } | null>(null);
   const apiRef = useRef<SceneApi | null>(null);
 
-  const summary = useMemo(() => computeSummary(footprints), [footprints]);
-  const distribution = useMemo(() => computeDistribution(footprints), [footprints]);
-  const selectedFootprint = selectedId ? footprints.find((f) => f.id === selectedId) ?? null : null;
+  const summary = useMemo(() => computeSummary(places), [places]);
+  const distribution = useMemo(() => computeDistribution(places), [places]);
+  const selectedPlace = selectedPlaceId ? places.find((p) => p.id === selectedPlaceId) ?? null : null;
   const focusedPlanet = focusedId && focusedId !== EARTH_ID ? getPlanetConfig(focusedId) ?? null : null;
 
   const handleExitFocus = () => {
     setFocusedId(null);
-    setSelectedId(null);
+    setSelectedPlaceId(null);
     setPendingLocation(null);
+    setMergeCandidate(null);
+    setVisitTargetPlace(null);
     setFootprintTarget(null);
+  };
+
+  const startAddingAt = (lat: number, lng: number) => {
+    const nearby = findNearbyPlace(places, lat, lng);
+    if (nearby) {
+      setMergeCandidate({ place: nearby, lat, lng });
+    } else {
+      setPendingLocation({ lat, lng });
+    }
   };
 
   const handleFabClick = () => {
     const center = apiRef.current?.getCenterLatLng() ?? { lat: 0, lng: 0 };
-    setPendingLocation(center);
+    startAddingAt(center.lat, center.lng);
   };
 
   return (
@@ -56,16 +72,16 @@ export default function App() {
       }}
     >
       <Scene
-        footprints={footprints}
+        places={places}
         focusedId={focusedId}
         footprintTarget={footprintTarget}
-        onSurfaceClick={(lat, lng) => setPendingLocation({ lat, lng })}
-        onSelectFootprint={(footprint) => setSelectedId(footprint.id)}
+        onSurfaceClick={(lat, lng) => startAddingAt(lat, lng)}
+        onSelectPlace={(place) => setSelectedPlaceId(place.id)}
         onFocusPlanet={setFocusedId}
         onExitFocus={handleExitFocus}
         apiRef={apiRef}
-        renderMarker={(footprint) => (
-          <EarthMarker footprint={footprint} radius={EARTH_RADIUS} onSelect={(f) => setSelectedId(f.id)} />
+        renderMarker={(place) => (
+          <EarthMarker place={place} radius={EARTH_RADIUS} onSelect={(p) => setSelectedPlaceId(p.id)} />
         )}
       />
 
@@ -91,37 +107,50 @@ export default function App() {
         </>
       )}
 
+      {mergeCandidate && (
+        <MergeConfirmDialog
+          place={mergeCandidate.place}
+          onMerge={() => {
+            setVisitTargetPlace(mergeCandidate.place);
+            setMergeCandidate(null);
+          }}
+          onCreateNew={() => {
+            setPendingLocation({ lat: mergeCandidate.lat, lng: mergeCandidate.lng });
+            setMergeCandidate(null);
+          }}
+          onCancel={() => setMergeCandidate(null)}
+        />
+      )}
+
       {pendingLocation && (
-        <AddFootprintPopup
+        <AddPlacePopup
           lat={pendingLocation.lat}
           lng={pendingLocation.lng}
           onCancel={() => setPendingLocation(null)}
-          onSave={({ name, country, notes, photos }) => {
-            const footprint: Footprint = {
-              id: crypto.randomUUID(),
-              name,
-              country,
-              notes,
-              photos,
-              lat: pendingLocation.lat,
-              lng: pendingLocation.lng,
-              createdAt: Date.now(),
-            };
-            addFootprint(footprint);
+          onSave={({ name, country, date, notes, photos }) => {
+            addPlace({ name, country, date, notes, photos, lat: pendingLocation.lat, lng: pendingLocation.lng });
             setPendingLocation(null);
           }}
         />
       )}
 
-      {selectedFootprint && (
-        <FootprintPopup
-          footprint={selectedFootprint}
-          onClose={() => setSelectedId(null)}
-          onUpdate={(patch) => updateFootprint(selectedFootprint.id, patch)}
-          onDelete={() => {
-            removeFootprint(selectedFootprint.id);
-            setSelectedId(null);
+      {visitTargetPlace && (
+        <AddVisitPopup
+          place={visitTargetPlace}
+          onCancel={() => setVisitTargetPlace(null)}
+          onSave={({ date, notes, photos }) => {
+            addVisit(visitTargetPlace.id, { date, notes, photos });
+            setVisitTargetPlace(null);
           }}
+        />
+      )}
+
+      {selectedPlace && (
+        <PlaceTimelinePanel
+          place={selectedPlace}
+          onClose={() => setSelectedPlaceId(null)}
+          onAddComment={(visitId, data) => addComment(selectedPlace.id, visitId, data)}
+          onDeleteVisit={(visitId) => removeVisit(selectedPlace.id, visitId)}
         />
       )}
     </div>
