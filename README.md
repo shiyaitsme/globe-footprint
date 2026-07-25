@@ -74,6 +74,12 @@ npm run dev
 npm run build
 ```
 
+## 部署
+
+线上跑在 Cloudflare Workers（静态资源模式）：`https://wanderer.shiya9863.workers.dev`。Cloudflare 的 Workers Builds 直接连的是这个 GitHub 仓库本身，配置了推送到 `main` 分支自动构建部署（构建命令 `npm run build`，部署命令 `npx wrangler deploy`），不需要仓库里额外放 `wrangler.toml`——因为是"纯静态资源 Worker"类型，构建/部署相关配置维护在 Cloudflare 后台（Worker 的 Settings → Build），不在代码仓库里，改构建命令之类的设置要去那边改。
+
+仓库原名 `globe-footprint`，后来改名成了 `wanderer`（跟 Cloudflare 那边的 Worker 名字对上）；GitHub 改名后旧地址会自动跳转，不影响 clone/push。
+
 ## 数据存储说明
 
 足迹记录（含照片）保存在浏览器本地的 `localStorage` 中，仅在当前浏览器 / 设备可见，清除浏览器数据会导致记录丢失。上传的照片会在客户端自动压缩（长边最大 1600px，JPEG 质量 0.8），以降低占用 `localStorage` 空间的风险；如果计划长期记录大量照片，后续可以考虑迁移到 IndexedDB 或接入后端存储。

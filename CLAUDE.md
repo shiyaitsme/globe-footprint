@@ -59,6 +59,12 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 `CameraRig.tsx` 用一个持久化的 `tween`（`useRef` 存的普通对象，`gsap.to()` 直接对它做数值补间）来驱动 `camera.position` 和 `controls.target`。这个 `tween` 只在**自己触发的补间过程中**被更新——如果 GSAP 补间结束后 `controls.enabled` 恢复为 `true`，用户又用鼠标自由拖拽/滚轮缩放了一阵（这个场景下 `enablePan={false}`，所以 `controls.target` 不会被用户操作改变，但 `camera.position` 会），下一次调用 `flyTo()` 时，如果直接从 `tween` 存的旧数值开始补间，这个旧数值已经和用户实际看到的镜头位置对不上了。所以 `flyTo()` 一开始必须先把 `tween.px/py/pz`（以及 `tx/ty/tz`）从 `camera.position` / `controls.target` 的**当前实际值**重新同步一遍，再开始新的补间，不能假设 `tween` 里存的还是准的。同一个地方还顺手 flush 了一下 OrbitControls 可能残留的阻尼惯性（临时关掉 `enableDamping` 调一次 `update()` 再恢复），避免它在补间过程中继续自己拽相机。
 
+## 部署：Cloudflare Workers，没有 wrangler.toml 不是漏配
+
+这个仓库直接连了 Cloudflare Workers 的 Workers Builds，推送到 `main` 会自动构建部署到 `https://wanderer.shiya9863.workers.dev`（静态资源 Worker）。仓库里故意没有 `wrangler.toml`——构建命令、部署命令这些都是在 Cloudflare 后台配置的，不是这边漏放了配置文件，不要因为找不到 wrangler 配置就去仓库里加一个，去 Cloudflare 那边的 Settings → Build 改就行。
+
+仓库本身在某次迭代里从 `globe-footprint` 改名成了 `wanderer`（为了和 Cloudflare 那边的 Worker 名字对上），历史和远程地址都是同一个仓库，GitHub 改名后旧名字的地址还能继续用（自动跳转），git fetch/push 不用改任何东西。
+
 ## 测试环境的一个坑（跟代码无关，纯粹是这个沙盒环境的限制）
 
 在这个 headless Chromium + Playwright 的沙盒里，WebGL 是 SwiftShader 软件渲染（没有真实 GPU），加上后处理（Bloom/DepthOfField）之后帧率会掉到个位数。如果测试时发现相机动画看起来"没到位"，先耐心多等几秒再截图排除纯粹的渲染慢——但**"卡死不动"和"渲染慢"不是一回事**：上面 `EffectComposer` 那条就是一个真实存在过的 bug，在这个慢速沙盒里第一次排查时被误判成"纯粹是环境渲染慢，等久一点就好"，直到真实用户在真实设备上复现出"点返回宇宙后画面永久卡死"才发现是渲染循环真的被冻住了、根本不会再更新，不管等多久截图都长得一样。以后遇到类似"相机好像没动"的现象，除了等久一点重新截图，也要检查连续多张截图是不是**逐帧完全不变**（那大概率是真 bug，渲染循环没在跑），还是**在缓慢但持续地变化**（那大概率只是这个环境软件渲染慢）。
