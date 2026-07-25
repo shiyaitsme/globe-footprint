@@ -12,17 +12,22 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 没有测试框架，也没有 lint 脚本接入 CI；`.oxlintrc.json` 是 Vite 模板自带的，没启用类型感知规则。
 
-## 现状：首页是 HUD 仪表盘，不是多星球宇宙
+## 现状：首页是"多星球宇宙" + HUD 仪表盘的合体
 
-`App.tsx` 渲染的是从 Claude Design 项目照着做的 HUD 首页（`src/components/hud/` 下那一堆组件）。中间是一个可交互的 3D 地球（`Earth.tsx` + `hud/EarthCanvas.tsx`），拖动旋转、点击地表加足迹、点击标记看详情。
+`App.tsx` 现在直接渲染 `Scene.tsx`（地球 + `PLACEHOLDER_PLANETS` 里的几颗占位星球，自由漫游 + 点击聚焦），全屏铺满，取代了之前那个"背景图/装饰星球 + 固定小圆圈地球插槽"的静态 HUD 版本。`Scene.tsx` / `CameraRig.tsx` / `Planet.tsx` 这套自由漫游 + GSAP 缓动镜头 + Bloom/DepthOfField "虚焦配角"效果**曾经在某次迭代里被搁置过**（`App.tsx` 一度改成只显示 HUD 卡片 + 一个不接受镜头动画的静态地球插槽），现在已经重新接回首页，不要再把它当成可以随便动的死代码。
 
-`Scene.tsx` / `CameraRig.tsx` / `Planet.tsx` / `Marker.tsx` 是**更早一版**的首页：地球 + 5 颗可点击聚焦的占位星球，GSAP 缓动镜头 + Bloom/DepthOfField 做"虚焦配角"效果。这套代码完整能跑，但**没有被 `App.tsx` 引用**，是产品决定暂时搁置、故意保留的，不是该删的死代码。如果任务是"把 JOURNEY 导航页做成能飞到另一颗星球"之类的，先看这几个文件能不能直接复用，不要重新发明一遍相机缓动逻辑。
+三种 UI 状态由 `App.tsx` 里的 `focusedId`（`null` / `EARTH_ID` / 占位星球 id）驱动：
+- `focusedId === null`（宇宙概览）：只显示导航栏和 `UniverseHint` 提示，所有星球缓慢自转、自由漫游可拖拽。
+- `focusedId === EARTH_ID`（聚焦地球）：`GreetingCard` / `DistributionCard` / `StatStrip` / `AddFab` 这几张 HUD 数据卡片才会出现，同时可以点地表加足迹、点标记看详情——这是产品上"点地球 = 核心足迹功能"的入口。
+- `focusedId` 是某颗占位星球：显示 `PlanetPanel`（星球名 + "建设中"占位文案），这几颗星球以后要接真实功能时，在这里换内容即可。
 
-`Earth.tsx` 被两边共用。区别只在于调用方传不传 `renderMarker` prop：
-- HUD 首页（`hud/EarthCanvas.tsx`）传了 `renderMarker`，用的是 `hud/EarthMarker.tsx`（点阵脉冲圆点样式）。
-- 多星球宇宙（`Scene.tsx`）不传，走 `Earth.tsx` 里默认的旧版 `Marker.tsx`（红色小球 + 文字标签）。
+三种状态都会有 `BackButton`（点了退出聚焦回到概览）；概览状态下点击场景空白处（`Scene.tsx` 的 `onPointerMissed`）也会退出聚焦，两种退出方式都要留着。
 
-如果要改地球本身的行为（自转速度、点击判定、缩放/淡出动画），两边都会受影响，改之前确认一下是不是两边都想要。
+`Earth.tsx` 只有一份，靠可选的 `renderMarker` prop 决定用哪种足迹标记样式；现在 `App.tsx` 无论是给 `Scene` 里的地球，都统一传了 `hud/EarthMarker.tsx`（点阵脉冲圆点样式）。`Marker.tsx`（红色小球 + 文字标签）是 `Earth.tsx` 不传 `renderMarker` 时的默认兜底，目前没有调用方在用，但 `Earth.tsx` 的实现依然保留这个分支，不算死代码。
+
+`hud/EarthSlot.tsx` 和 `hud/EarthCanvas.tsx`（那个把地球单独塞进一个固定小圆圈里、带自己独立 Canvas 的旧实现）已经删掉了——`Scene.tsx` 现在是唯一的地球渲染入口，别再重新造一个。
+
+如果要改地球本身的行为（自转速度、点击判定、缩放/淡出动画），改的是 `Earth.tsx`，`Scene.tsx` 是唯一调用方，不用再担心"两边要不要都改"的问题。
 
 ## 地球自转 + 点击经纬度：旋转补偿
 

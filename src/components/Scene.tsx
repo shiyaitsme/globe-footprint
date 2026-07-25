@@ -1,13 +1,19 @@
-import { Suspense, useMemo, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Suspense, useEffect, useMemo, useRef } from "react";
+import type { ReactNode } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Bloom, DepthOfField, EffectComposer } from "@react-three/postprocessing";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import Earth from "./Earth";
+import Earth, { EARTH_RADIUS } from "./Earth";
 import Planet from "./Planet";
 import CameraRig from "./CameraRig";
 import { PLACEHOLDER_PLANETS, OVERVIEW_CAMERA_POSITION, getPlanetConfig } from "../planets";
+import { vector3ToLatLng } from "../utils/geo";
 import type { Footprint } from "../types";
+
+export interface SceneApi {
+  getCenterLatLng: () => { lat: number; lng: number };
+}
 
 interface SceneProps {
   footprints: Footprint[];
@@ -17,6 +23,24 @@ interface SceneProps {
   onSelectFootprint: (footprint: Footprint) => void;
   onFocusPlanet: (id: string) => void;
   onExitFocus: () => void;
+  renderMarker?: (footprint: Footprint) => ReactNode;
+  apiRef?: React.MutableRefObject<SceneApi | null>;
+}
+
+function ApiBridge({ apiRef }: { apiRef: React.MutableRefObject<SceneApi | null> }) {
+  const { camera } = useThree();
+  useEffect(() => {
+    apiRef.current = {
+      getCenterLatLng: () => {
+        const point = camera.position.clone().normalize().multiplyScalar(EARTH_RADIUS);
+        return vector3ToLatLng(point, EARTH_RADIUS);
+      },
+    };
+    return () => {
+      apiRef.current = null;
+    };
+  }, [apiRef, camera]);
+  return null;
 }
 
 export default function Scene({
@@ -27,6 +51,8 @@ export default function Scene({
   onSelectFootprint,
   onFocusPlanet,
   onExitFocus,
+  renderMarker,
+  apiRef,
 }: SceneProps) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const focusedPosition = useMemo(
@@ -52,6 +78,7 @@ export default function Scene({
           onSelect={() => onFocusPlanet("earth")}
           onSurfaceClick={onSurfaceClick}
           onSelectFootprint={onSelectFootprint}
+          renderMarker={renderMarker}
         />
         {PLACEHOLDER_PLANETS.map((planet) => (
           <Planet
@@ -73,6 +100,7 @@ export default function Scene({
         rotateSpeed={0.5}
       />
       <CameraRig controlsRef={controlsRef} focusedId={focusedId} footprintTarget={footprintTarget} />
+      {apiRef && <ApiBridge apiRef={apiRef} />}
       <EffectComposer>
         {[
           <Bloom key="bloom" luminanceThreshold={0.25} luminanceSmoothing={0.9} intensity={0.6} mipmapBlur />,
