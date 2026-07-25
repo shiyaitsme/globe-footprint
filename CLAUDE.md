@@ -29,6 +29,14 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 如果要改地球本身的行为（自转速度、点击判定、缩放/淡出动画），改的是 `Earth.tsx`，`Scene.tsx` 是唯一调用方，不用再担心"两边要不要都改"的问题。
 
+## 占位星球的真实贴图：不能直接用 `TextureLoader`
+
+`planets.ts` 里配了 `textureUrl` 的占位星球（星球 A~E 现在全配了），加载贴图走的是 `utils/seamlessTextureLoader.ts` 里的 `SeamlessEquirectTextureLoader`，**不是** three.js 自带的 `TextureLoader`。原因：这几张贴图（用户上传的）大多不是真正的 equirectangular 全景图，而是"一张有球面弧度的照片"（比如 `planet_B_texture.png`，其实就是从某个角度拍的一颗星球的照片，不是能无缝 360° 环绕的贴图）。如果直接用 `TextureLoader` 把这种图按标准球面 UV（经度 0°~360° 对应图片左边到右边）贴上去，图片左边缘和右边缘对不上，会在球面上出现一条很丑的硬接缝——而且往往还不只是接缝那么简单：原图边缘部分（原拍摄角度里画面边缘、掠射光照）本来就偏"平"、细节少，被贴到新球体上以后，接缝两侧会呈现出"一半有细节纹理、一半像没贴图一样平"的诡异效果（实测过，见过一次这个问题）。
+
+`SeamlessEquirectTextureLoader` 的做法：截取原图中间最清晰的一段（`CORE_FRACTION = 0.6`，即中间 60% 宽度），镜像铺满整张画布再拿去贴图，这样球面的"环绕接缝"和"镜像对折缝"两处都能严丝合缝对上（镜像后接缝两侧本来就是同一列像素）。代价是星球背面会是正面的镜像重复，不是独一无二的纹理——对这种装饰性的占位星球来说完全够用，不要为了追求"背面也不同"就换回 `TextureLoader`，会导致接缝问题重新出现。
+
+`Earth.tsx` 的 `earth.jpg` **不**用这套 loader——它是真实的 NASA Blue Marble 等距柱状投影图，本来就无缝，镜像裁切反而会把地理位置搞乱，继续用普通 `TextureLoader` 加载即可。
+
 ## 地球自转 + 点击经纬度：旋转补偿
 
 `Earth.tsx` 里地球会自转（`EARTH_CONFIG.rotationSpeed`），旋转量加在**外层 group**（`groupRef.current.rotation.y`）上，而不是内层 mesh —— 这样足迹标记（作为 group 的子节点）才会跟着贴图一起转，不会转着转着就和实际地理位置对不上。

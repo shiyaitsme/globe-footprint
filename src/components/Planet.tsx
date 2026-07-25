@@ -1,10 +1,11 @@
 import { useMemo, useRef } from "react";
 import { useFrame, useLoader } from "@react-three/fiber";
-import { Color, Group, Mesh, MeshStandardMaterial, Texture, TextureLoader, Vector3 } from "three";
+import { Color, Group, Mesh, MeshStandardMaterial, Texture, Vector3 } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { PlanetConfig } from "../planets";
 import { FOCUS_DIM_OPACITY, FOCUS_DIM_SCALE, FOCUS_LERP_SPEED, FOCUS_PUSH_FACTOR } from "../planets";
 import { generateGasGiantTexture } from "../utils/planetTexture";
+import { SeamlessEquirectTextureLoader } from "../utils/seamlessTextureLoader";
 
 const DIMMED_TINT = new Color("#7a7a7a");
 const NORMAL_TINT = new Color("#ffffff");
@@ -29,7 +30,7 @@ function PlanetWithImageTexture({
   onSelect,
   textureUrl,
 }: PlanetProps & { textureUrl: string }) {
-  const texture = useLoader(TextureLoader, textureUrl);
+  const texture = useLoader(SeamlessEquirectTextureLoader, textureUrl);
   return <PlanetBody config={config} dimmed={dimmed} onSelect={onSelect} texture={texture} />;
 }
 
