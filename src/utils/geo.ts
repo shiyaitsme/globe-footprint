@@ -1,5 +1,4 @@
 import { Vector3 } from "three";
-import type { Place } from "../types";
 
 export function latLngToVector3(lat: number, lng: number, radius: number): Vector3 {
   const phi = ((90 - lat) * Math.PI) / 180;
@@ -18,30 +17,9 @@ export function vector3ToLatLng(point: Vector3, radius: number): { lat: number; 
   return { lat, lng: wrappedLng };
 }
 
-const EARTH_RADIUS_KM = 6371;
-
-export function haversineDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(a)));
-}
-
-/** 新增到访时用来判断"是否和已有地点足够近"的阈值：大致覆盖同一座城市/都会区 */
-export const NEARBY_PLACE_THRESHOLD_KM = 150;
-
-export function findNearbyPlace(places: Place[], lat: number, lng: number): Place | null {
-  let closest: Place | null = null;
-  let closestDistance = Infinity;
-  for (const place of places) {
-    const distance = haversineDistanceKm(lat, lng, place.lat, place.lng);
-    if (distance < NEARBY_PLACE_THRESHOLD_KM && distance < closestDistance) {
-      closest = place;
-      closestDistance = distance;
-    }
-  }
-  return closest;
+/** 新地点不再依赖点击的精确坐标（反正也对不上真实地理），随机撒在球面上当装饰性亮点 */
+export function randomLatLng(): { lat: number; lng: number } {
+  const lat = (Math.asin(2 * Math.random() - 1) * 180) / Math.PI;
+  const lng = Math.random() * 360 - 180;
+  return { lat, lng };
 }

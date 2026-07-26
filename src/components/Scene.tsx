@@ -1,19 +1,14 @@
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Bloom, DepthOfField, EffectComposer } from "@react-three/postprocessing";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import Earth, { EARTH_RADIUS } from "./Earth";
+import Earth from "./Earth";
 import Planet from "./Planet";
 import CameraRig from "./CameraRig";
 import { EARTH_CONFIG, PLACEHOLDER_PLANETS, OVERVIEW_CAMERA_POSITION, getPlanetConfig } from "../planets";
-import { vector3ToLatLng } from "../utils/geo";
 import type { Place } from "../types";
-
-export interface SceneApi {
-  getCenterLatLng: () => { lat: number; lng: number };
-}
 
 interface SceneProps {
   places: Place[];
@@ -24,23 +19,6 @@ interface SceneProps {
   onFocusPlanet: (id: string) => void;
   onExitFocus: () => void;
   renderMarker?: (place: Place) => ReactNode;
-  apiRef?: React.MutableRefObject<SceneApi | null>;
-}
-
-function ApiBridge({ apiRef }: { apiRef: React.MutableRefObject<SceneApi | null> }) {
-  const { camera } = useThree();
-  useEffect(() => {
-    apiRef.current = {
-      getCenterLatLng: () => {
-        const point = camera.position.clone().normalize().multiplyScalar(EARTH_RADIUS);
-        return vector3ToLatLng(point, EARTH_RADIUS);
-      },
-    };
-    return () => {
-      apiRef.current = null;
-    };
-  }, [apiRef, camera]);
-  return null;
 }
 
 export default function Scene({
@@ -52,7 +30,6 @@ export default function Scene({
   onFocusPlanet,
   onExitFocus,
   renderMarker,
-  apiRef,
 }: SceneProps) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const focusedPosition = useMemo(
@@ -109,7 +86,6 @@ export default function Scene({
         rotateSpeed={0.5}
       />
       <CameraRig controlsRef={controlsRef} focusedId={focusedId} footprintTarget={footprintTarget} />
-      {apiRef && <ApiBridge apiRef={apiRef} />}
       <EffectComposer>
         <Bloom luminanceThreshold={0.25} luminanceSmoothing={0.9} intensity={0.6} mipmapBlur />
         <DepthOfField

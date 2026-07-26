@@ -5,8 +5,6 @@ import { fileToCompressedDataUrl } from "../../utils/image";
 import { todayDateString } from "../../hooks/usePlaces";
 
 interface AddPlacePopupProps {
-  lat: number;
-  lng: number;
   onCancel: () => void;
   onSave: (data: { name: string; country: string; date: string; notes: string; photos: string[] }) => void;
 }
@@ -28,7 +26,7 @@ const fieldLabelStyle: React.CSSProperties = {
   gap: 6,
 };
 
-export default function AddPlacePopup({ lat, lng, onCancel, onSave }: AddPlacePopupProps) {
+export default function AddPlacePopup({ onCancel, onSave }: AddPlacePopupProps) {
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
   const [date, setDate] = useState(todayDateString());
@@ -56,8 +54,8 @@ export default function AddPlacePopup({ lat, lng, onCancel, onSave }: AddPlacePo
 
   return (
     <DrawerPanel
-      title="添加新地点"
-      subtitle={`纬度 ${lat.toFixed(2)}° · 经度 ${lng.toFixed(2)}°`}
+      title="添加足迹"
+      subtitle="名称和国家都和已有地点一致时，会自动合并为该地点的一次新到访"
       onClose={onCancel}
       onOpened={() => nameInputRef.current?.focus()}
     >
