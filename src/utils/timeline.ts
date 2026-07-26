@@ -1,8 +1,6 @@
-import type { Visit } from "../types";
-
-export interface YearGroup {
+export interface YearGroup<T extends { date: string }> {
   year: number;
-  visits: Visit[];
+  visits: T[];
 }
 
 function parseVisitDate(date: string): { year: number; month: number; day: number } {
@@ -10,9 +8,9 @@ function parseVisitDate(date: string): { year: number; month: number; day: numbe
   return { year: y, month: (m || 1) - 1, day: d || 1 };
 }
 
-/** 把一个地点的到访记录按年份分组，年份从新到旧，年份内部按日期从新到旧 */
-export function groupVisitsByYear(visits: Visit[]): YearGroup[] {
-  const byYear = new Map<number, Visit[]>();
+/** 按年份分组，年份从新到旧，年份内部按日期从新到旧——单个地点的到访记录、跨地点摊平后的列表都能用 */
+export function groupVisitsByYear<T extends { date: string }>(visits: T[]): YearGroup<T>[] {
+  const byYear = new Map<number, T[]>();
   for (const visit of visits) {
     const { year } = parseVisitDate(visit.date);
     const bucket = byYear.get(year);

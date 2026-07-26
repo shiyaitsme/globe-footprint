@@ -2,9 +2,10 @@ import DotWord from "./DotWord";
 
 interface NavBarProps {
   variant: "top" | "bottom";
+  onJourneyClick?: () => void;
 }
 
-function NavPills() {
+function NavPills({ onJourneyClick }: { onJourneyClick?: () => void }) {
   return (
     <>
       <a
@@ -22,6 +23,10 @@ function NavPills() {
       </a>
       <a
         href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          onJourneyClick?.();
+        }}
         style={{
           position: "relative",
           display: "flex",
@@ -29,6 +34,7 @@ function NavPills() {
           padding: "6px 14px",
           borderRadius: 999,
           border: "1.5px solid rgba(255,255,255,0.35)",
+          cursor: "pointer",
         }}
       >
         <DotWord word="JOURNEY" color="rgba(255,255,255,0.85)" />
@@ -39,7 +45,7 @@ function NavPills() {
   );
 }
 
-export default function NavBar({ variant }: NavBarProps) {
+export default function NavBar({ variant, onJourneyClick }: NavBarProps) {
   const isTop = variant === "top";
   const gradient = isTop
     ? "linear-gradient(to bottom, rgba(3,3,5,0.7) 0%, rgba(3,3,5,0.4) 65%, rgba(3,3,5,0) 100%)"
@@ -71,11 +77,11 @@ export default function NavBar({ variant }: NavBarProps) {
             <DotWord word="WANDERER" />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <NavPills />
+            <NavPills onJourneyClick={onJourneyClick} />
           </div>
         </>
       ) : (
-        <NavPills />
+        <NavPills onJourneyClick={onJourneyClick} />
       )}
     </div>
   );

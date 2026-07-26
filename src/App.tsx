@@ -12,6 +12,7 @@ import PlanetPanel from "./components/hud/PlanetPanel";
 import BackButton from "./components/hud/BackButton";
 import AddPlacePopup from "./components/hud/AddPlacePopup";
 import PlaceTimelinePanel from "./components/hud/PlaceTimelinePanel";
+import JourneyPanel from "./components/hud/JourneyPanel";
 import { usePlaces } from "./hooks/usePlaces";
 import { computeDistribution, computeSummary } from "./utils/geoStats";
 import { randomLatLng } from "./utils/geo";
@@ -22,6 +23,7 @@ import "./App.css";
 export default function App() {
   const { places, addPlace, addVisit, removeVisit, addComment } = usePlaces();
   const [isAdding, setIsAdding] = useState(false);
+  const [journeyOpen, setJourneyOpen] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
@@ -60,8 +62,8 @@ export default function App() {
         )}
       />
 
-      <NavBar variant="top" />
-      <NavBar variant="bottom" />
+      <NavBar variant="top" onJourneyClick={() => setJourneyOpen(true)} />
+      <NavBar variant="bottom" onJourneyClick={() => setJourneyOpen(true)} />
 
       {focusedId === null && <UniverseHint />}
 
@@ -95,6 +97,14 @@ export default function App() {
             }
             setIsAdding(false);
           }}
+        />
+      )}
+
+      {journeyOpen && (
+        <JourneyPanel
+          places={places}
+          onClose={() => setJourneyOpen(false)}
+          onSelectPlace={(place) => setSelectedPlaceId(place.id)}
         />
       )}
 

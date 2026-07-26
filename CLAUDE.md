@@ -89,6 +89,21 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 抽屉挂载后的滑入动画用 `onAnimationEnd` 回调（`DrawerPanel` 的 `onOpened` prop）延迟到动画播完再 `focus()` 第一个输入框，而不是用 `autoFocus`——同时抢焦点和跑滑入动画会互相干扰，视觉上会像是卡了一下。以后这个抽屉要加新的自动聚焦字段，也走这个 `onOpened` 回调，别退回 `autoFocus`。
 
+## 跨地点浏览：`JourneyPanel.tsx`（NavBar 的 JOURNEY 入口）
+
+单个地点的 timeline（`PlaceTimelinePanel`）只能看"这一个地方"去过几次；要"从哪年到哪年整体翻看"或者"看某个国家/某个地方的所有轨迹"，入口是 `NavBar.tsx` 里原本纯装饰、没有任何点击效果的 "JOURNEY" 那个导航项——现在接了 `onJourneyClick`，点开 `JourneyPanel.tsx`，独立于 `focusedId` 那套聚焦状态机之外（不管当前是宇宙概览还是聚焦地球/星球，随时能点开，跟 `AddPlacePopup` 一样是盖在最上面的覆盖层）。
+
+面板里有两种浏览模式（顶部一排切换按钮），对应两个不同的分组维度：
+
+- **按时间**：`utils/journey.ts` 的 `flattenVisits(places)` 把所有地点的到访记录摊平成一条列表（每条都带上 `placeId`/`placeName`/`placeCountry`），再喂给 `utils/timeline.ts` 的 `groupVisitsByYear`（这个函数已经改成泛型 `<T extends {date:string}>`，`PlaceTimelinePanel` 传 `Visit[]`、这里传摊平后的 `VisitWithPlace[]`，同一份分组逻辑两边共用）。每条到访前面会多显示一个"地点·国家"的可点击标签，点它会调 `onSelectPlace` 跳到那个地点的完整 `PlaceTimelinePanel`。
+- **按地点**：`groupPlacesByCountry(places)` 按国家分组（国家名字母排序，没填国家的统一归到"未知国家"），展开国家看到该国下的所有地点及各自到访次数，点某个地点同样调 `onSelectPlace`。
+
+`onSelectPlace` 最终都是设置 `App.tsx` 的 `selectedPlaceId`，渲染出 `PlaceTimelinePanel`——JSX 顺序上 `PlaceTimelinePanel` 排在 `JourneyPanel` 后面，两者 z-index 都是 20，同层级下后渲染的盖在上面，所以点进某个地点时 `PlaceTimelinePanel` 会叠在 `JourneyPanel` 上方而不是替换它，关掉之后 `JourneyPanel` 还开着，不用重新点 JOURNEY。
+
+`ThumbCluster.tsx`（缩略图簇）从 `PlaceTimelinePanel.tsx` 里抽成了独立组件，两个面板共用，改缩略图样式（比如网格列数、"+N" 遮罩）只用改一处。
+
+`DotWord.tsx` 渲染的文字是像素点阵拼出来的图形，不是真实文本节点（比如 "JOURNEY" 在 DOM 里根本搜不到这几个字母）——加了 `role="img" aria-label={word}` 之后屏幕阅读器和自动化测试才认得出来，以后往 NavBar 加新的可点击项也要留意这个坑，别指望用文本选择器/文本朗读直接找到 `DotWord`。
+
 ## `EffectComposer` 的 children 数量不能随状态变化
 
 `Scene.tsx` 里 `<EffectComposer>` 曾经这样写：`Bloom` 常驻，`DepthOfField` 只在 `focusedPosition` 有值（即聚焦某颗星球/地球）时才作为第二个 child 挂进去，没聚焦时数组只有一个元素。**这个写法会把 `@react-three/postprocessing` 的渲染循环拖死**——从"聚焦"退回"概览"、`DepthOfField` 被卸载的那一刻，画面会完全冻结在退出前的最后一帧，不再更新（不是变慢，是彻底不再渲染任何新帧），`CameraRig` 的 GSAP 缓动镜头逻辑本身完全正常、状态也正确切换了，只是没有画面能体现出来。复现方式：聚焦地球后用滚轮/拖拽随便动一下镜头，再点"返回宇宙"，旧代码会卡死不动，实测过好几秒到十几秒都不会恢复。

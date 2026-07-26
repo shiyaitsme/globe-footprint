@@ -10,7 +10,7 @@ export default function DotWord({ word, color = "#fff" }: DotWordProps) {
   const { dots, width, height } = useMemo(() => getDotWord(word), [word]);
 
   return (
-    <span style={{ position: "relative", display: "inline-block", width, height }}>
+    <span role="img" aria-label={word} style={{ position: "relative", display: "inline-block", width, height }}>
       {dots.map((d, i) => (
         <span
           key={i}
