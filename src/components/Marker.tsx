@@ -22,7 +22,7 @@ export default function Marker({ place, radius, onSelect }: MarkerProps) {
         <sphereGeometry args={[0.035, 16, 16]} />
         <meshBasicMaterial color="#ff5252" />
       </mesh>
-      <Html distanceFactor={8} occlude style={{ pointerEvents: "none" }}>
+      <Html distanceFactor={8} occlude zIndexRange={[1, 0]} style={{ pointerEvents: "none" }}>
         <div className="marker-label">{place.name}</div>
       </Html>
     </group>

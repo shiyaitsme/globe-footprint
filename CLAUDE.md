@@ -47,6 +47,12 @@ npm run build           # tsc -b && vite build，提交前务必跑一遍确认�
 
 点击地表算经纬度时（`handleClick` 里），必须先把 raycast 拿到的世界坐标点按当前 `groupRef.current.rotation.y` 反向旋转（`unrotateY`），再喂给 `vector3ToLatLng`，否则算出来的经纬度会随着自转累积的角度越转越偏。这两处（旋转挂在哪个节点上 + 点击时的反向旋转）必须配套修改，改一半会导致"标记显示位置正确，但新加的足迹点错位"这种不容易发现的 bug。
 
+## 足迹标记用 `@react-three/drei` 的 `<Html>`，z-index 会不受控地爆到几百万
+
+`EarthMarker.tsx`（还有没在用的 `Marker.tsx`）里的白色脉冲圆点是用 drei 的 `<Html>` 渲染的——它不是画在 WebGL canvas 里，而是 `createPortal` 出一个真实 DOM 节点叠在 canvas 上面。drei 会给这个节点自动算一个内联 `z-index`（根据到相机的距离，让近处的 marker 盖住远处的），默认的 `zIndexRange` 是 `[16777271, 0]`，也就是说不显式设置的话这个 DOM 节点的 `z-index` 可能高达几百万——而 `AddPlacePopup`/`AddVisitPopup`/`PlaceTimelinePanel`/`MergeConfirmDialog` 这些 HUD 弹层用的 `z-index` 只有 20~30。结果就是不管 JSX/DOM 顺序如何，marker 的这个白点永远盖在所有弹窗上面，而且因为它是真实的 `<button>`，不仅视觉穿透，点击也会穿透（弹窗开着的时候点到那个点，还是会触发 `onSelect` 打开 `PlaceTimelinePanel`）。
+
+修复方式是给这两处的 `<Html>` 都传 `zIndexRange={[1, 0]}`，把它的 z-index 压到个位数，低于所有 HUD 弹层。以后再往场景里加别的 `<Html>` 元素（无论是给地球还是占位星球加标记），都要记得传这个 prop，不然默认值会重新引入这个"背景元素盖住弹窗"的坑。
+
 ## 数据模型：`Place` + `Visit` + `VisitComment`（不再是扁平的 `Footprint`）
 
 早期版本里一个 `Footprint` = 地球上一个点 + 一个日期 + 一组照片/文字，一次到访就是一个 marker。为了支持"同一个地方去过好几次，点开显示一条完整 timeline"，数据模型已经改成三层（`src/types.ts`）：

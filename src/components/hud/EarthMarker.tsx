@@ -12,7 +12,7 @@ export default function EarthMarker({ place, radius, onSelect }: EarthMarkerProp
   const position = latLngToVector3(place.lat, place.lng, radius + 0.02);
 
   return (
-    <Html position={position} center distanceFactor={6}>
+    <Html position={position} center distanceFactor={6} zIndexRange={[1, 0]}>
       <div style={{ position: "relative", width: 14, height: 14 }}>
         <div
           style={{
