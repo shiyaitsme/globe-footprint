@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
 import CornerBrackets from "./CornerBrackets";
 import Lightbox from "./Lightbox";
@@ -15,8 +15,6 @@ interface PlaceTimelinePanelProps {
   onAddComment: (visitId: string, data: { text: string; photos: string[] }) => void;
   onDeleteVisit: (visitId: string) => void;
   onEditVisit: (visitId: string, data: PlacePopupData) => void;
-  /** 从"全部足迹"面板点某一条具体到访跳转过来时传入——用来自动展开对应年份并高亮定位到那一条，不用用户自己再点开找 */
-  focusVisitId?: string | null;
 }
 
 function CommentComposer({ onSubmit }: { onSubmit: (data: { text: string; photos: string[] }) => void }) {
@@ -130,14 +128,12 @@ function CommentComposer({ onSubmit }: { onSubmit: (data: { text: string; photos
 
 function VisitRow({
   visit,
-  highlighted,
   onOpenLightbox,
   onAddComment,
   onDeleteVisit,
   onEditVisit,
 }: {
   visit: Visit;
-  highlighted: boolean;
   onOpenLightbox: (photos: string[], index: number) => void;
   onAddComment: (data: { text: string; photos: string[] }) => void;
   onDeleteVisit: () => void;
@@ -146,18 +142,7 @@ function VisitRow({
   const { day, month } = formatVisitDayMonth(visit.date);
 
   return (
-    <div
-      id={`visit-${visit.id}`}
-      style={{
-        display: "flex",
-        gap: 14,
-        padding: "14px 10px",
-        margin: "0 -10px",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        background: highlighted ? "rgba(255,255,255,0.08)" : "transparent",
-        transition: "background 0.8s ease",
-      }}
-    >
+    <div style={{ display: "flex", gap: 14, padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
       <div style={{ width: 46, flexShrink: 0, textAlign: "right" }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: "rgba(255,255,255,0.85)", lineHeight: 1 }}>{day}</div>
         <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>
@@ -226,23 +211,12 @@ function VisitRow({
   );
 }
 
-export default function PlaceTimelinePanel({ place, onClose, onAddComment, onDeleteVisit, onEditVisit, focusVisitId }: PlaceTimelinePanelProps) {
+export default function PlaceTimelinePanel({ place, onClose, onAddComment, onDeleteVisit, onEditVisit }: PlaceTimelinePanelProps) {
   const yearGroups = groupVisitsByYear(place.visits);
-  const [expandedYears, setExpandedYears] = useState<Set<number>>(() => {
-    const focusVisit = focusVisitId ? place.visits.find((v) => v.id === focusVisitId) : null;
-    return focusVisit ? new Set([Number(focusVisit.date.slice(0, 4))]) : new Set();
-  });
+  const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
   const [lightboxPhotos, setLightboxPhotos] = useState<string[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
-  const [highlightedVisitId, setHighlightedVisitId] = useState(focusVisitId ?? null);
-
-  useEffect(() => {
-    if (!focusVisitId) return;
-    document.getElementById(`visit-${focusVisitId}`)?.scrollIntoView({ block: "center" });
-    const timer = setTimeout(() => setHighlightedVisitId(null), 1600);
-    return () => clearTimeout(timer);
-  }, [focusVisitId]);
 
   const toggleYear = (year: number) => {
     setExpandedYears((prev) => {
@@ -339,7 +313,6 @@ export default function PlaceTimelinePanel({ place, onClose, onAddComment, onDel
                       <VisitRow
                         key={visit.id}
                         visit={visit}
-                        highlighted={visit.id === highlightedVisitId}
                         onOpenLightbox={(photos, index) => {
                           setLightboxPhotos(photos);
                           setLightboxIndex(index);

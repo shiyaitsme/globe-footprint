@@ -12,7 +12,7 @@ import type { Place } from "../../types";
 interface JourneyPanelProps {
   places: Place[];
   onClose: () => void;
-  onSelectPlace: (place: Place, visitId?: string) => void;
+  onSelectPlace: (place: Place) => void;
   onAddPlace: () => void;
   onEditVisit: (placeId: string, visitId: string, data: PlacePopupData) => void;
 }
@@ -192,29 +192,10 @@ export default function JourneyPanel({ places, onClose, onSelectPlace, onAddPlac
                               </div>
 
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const place = places.find((p) => p.id === visit.placeId);
-                                    if (place) onSelectPlace(place, visit.id);
-                                  }}
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    padding: 0,
-                                    marginBottom: 6,
-                                    fontSize: 13,
-                                    fontWeight: 800,
-                                    color: "#fff",
-                                    cursor: "pointer",
-                                    textDecoration: "underline",
-                                    textUnderlineOffset: 3,
-                                  }}
-                                >
+                                <div style={{ marginBottom: 6, fontSize: 13, fontWeight: 800, color: "#fff" }}>
                                   {visit.placeName}
                                   {visit.placeCountry ? ` · ${visit.placeCountry}` : ""}
-                                </button>
+                                </div>
                                 <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                                   <ThumbCluster photos={visit.photos} onOpen={(i) => { setLightboxPhotos(visit.photos); setLightboxIndex(i); }} />
                                   <div style={{ flex: 1, minWidth: 90 }}>
