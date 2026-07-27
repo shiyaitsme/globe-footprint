@@ -11,7 +11,10 @@ export default function ThumbCluster({ photos, onOpen }: ThumbClusterProps) {
       {photos.slice(0, 9).map((src, i) => (
         <div
           key={i}
-          onClick={() => onOpen(i)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen(i);
+          }}
           style={{ position: "relative", width: 50, height: 50, cursor: "pointer", overflow: "hidden" }}
         >
           <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />

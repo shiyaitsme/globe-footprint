@@ -179,7 +179,8 @@ export default function JourneyPanel({ places, onClose, onSelectPlace, onAddPlac
                           return (
                             <div
                               key={visit.id}
-                              style={{ display: "flex", gap: 14, padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                              onClick={() => setEditingVisit(visit)}
+                              style={{ display: "flex", gap: 14, padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.08)", cursor: "pointer" }}
                             >
                               <div style={{ width: 46, flexShrink: 0, textAlign: "right" }}>
                                 <div style={{ fontSize: 22, fontWeight: 800, color: "rgba(255,255,255,0.85)", lineHeight: 1 }}>
@@ -193,7 +194,8 @@ export default function JourneyPanel({ places, onClose, onSelectPlace, onAddPlac
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     const place = places.find((p) => p.id === visit.placeId);
                                     if (place) onSelectPlace(place, visit.id);
                                   }}
@@ -221,13 +223,9 @@ export default function JourneyPanel({ places, onClose, onSelectPlace, onAddPlac
                                     </div>
                                   </div>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingVisit(visit)}
-                                  style={{ marginTop: 6, background: "none", border: "none", color: "rgba(255,255,255,0.45)", fontSize: 11, cursor: "pointer", padding: 0 }}
-                                >
+                                <span style={{ display: "block", marginTop: 6, color: "rgba(255,255,255,0.35)", fontSize: 11 }}>
                                   编辑
-                                </button>
+                                </span>
                               </div>
                             </div>
                           );
