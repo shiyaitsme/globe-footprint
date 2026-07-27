@@ -4,9 +4,21 @@ import DrawerPanel from "./DrawerPanel";
 import { fileToCompressedDataUrl } from "../../utils/image";
 import { todayDateString } from "../../hooks/usePlaces";
 
+export interface PlacePopupData {
+  name: string;
+  country: string;
+  date: string;
+  notes: string;
+  photos: string[];
+}
+
 interface AddPlacePopupProps {
+  /** "edit" 时表单标题/文案会切换成编辑语境，也不会显示"自动合并"的提示 */
+  mode?: "add" | "edit";
+  /** 编辑已有到访时传入当前值；不传则是全新的空表单 */
+  initial?: PlacePopupData;
   onCancel: () => void;
-  onSave: (data: { name: string; country: string; date: string; notes: string; photos: string[] }) => void;
+  onSave: (data: PlacePopupData) => void;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -26,12 +38,12 @@ const fieldLabelStyle: React.CSSProperties = {
   gap: 6,
 };
 
-export default function AddPlacePopup({ onCancel, onSave }: AddPlacePopupProps) {
-  const [name, setName] = useState("");
-  const [country, setCountry] = useState("");
-  const [date, setDate] = useState(todayDateString());
-  const [notes, setNotes] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
+export default function AddPlacePopup({ mode = "add", initial, onCancel, onSave }: AddPlacePopupProps) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [country, setCountry] = useState(initial?.country ?? "");
+  const [date, setDate] = useState(initial?.date ?? todayDateString());
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [photos, setPhotos] = useState<string[]>(initial?.photos ?? []);
   const [busy, setBusy] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,6 +58,10 @@ export default function AddPlacePopup({ onCancel, onSave }: AddPlacePopupProps) 
     }
   };
 
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (!name.trim()) return;
@@ -54,8 +70,8 @@ export default function AddPlacePopup({ onCancel, onSave }: AddPlacePopupProps) 
 
   return (
     <DrawerPanel
-      title="添加足迹"
-      subtitle="名称和国家都和已有地点一致时，会自动合并为该地点的一次新到访"
+      title={mode === "edit" ? "编辑足迹" : "添加足迹"}
+      subtitle={mode === "edit" ? "修改这次到访的信息" : "名称和国家都和已有地点一致时，会自动合并为该地点的一次新到访"}
       onClose={onCancel}
       onOpened={() => nameInputRef.current?.focus()}
     >
@@ -120,7 +136,32 @@ export default function AddPlacePopup({ onCancel, onSave }: AddPlacePopupProps) 
                 }}
               >
                 {photos.map((src, i) => (
-                  <img key={i} src={src} alt="" style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }} />
+                  <div key={i} style={{ position: "relative" }}>
+                    <img src={src} alt="" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", display: "block" }} />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      aria-label="删除照片"
+                      style={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        width: 20,
+                        height: 20,
+                        border: "none",
+                        background: "rgba(0,0,0,0.65)",
+                        color: "#fff",
+                        fontSize: 12,
+                        lineHeight: 1,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -149,7 +190,7 @@ export default function AddPlacePopup({ onCancel, onSave }: AddPlacePopupProps) 
               opacity: busy || !name.trim() ? 0.6 : 1,
             }}
           >
-            {busy ? "处理中…" : "保存"}
+            {busy ? "处理中…" : mode === "edit" ? "保存修改" : "保存"}
           </button>
         </div>
       </form>

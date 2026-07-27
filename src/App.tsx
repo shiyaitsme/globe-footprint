@@ -21,7 +21,7 @@ import { EARTH_ID, getPlanetConfig } from "./planets";
 import "./App.css";
 
 export default function App() {
-  const { places, addPlace, addVisit, removeVisit, addComment } = usePlaces();
+  const { places, addPlace, addVisit, updatePlace, updateVisit, removeVisit, addComment } = usePlaces();
   const [isAdding, setIsAdding] = useState(false);
   const [journeyOpen, setJourneyOpen] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
@@ -114,6 +114,10 @@ export default function App() {
           onClose={() => setSelectedPlaceId(null)}
           onAddComment={(visitId, data) => addComment(selectedPlace.id, visitId, data)}
           onDeleteVisit={(visitId) => removeVisit(selectedPlace.id, visitId)}
+          onEditVisit={(visitId, data) => {
+            updatePlace(selectedPlace.id, { name: data.name, country: data.country });
+            updateVisit(selectedPlace.id, visitId, { date: data.date, notes: data.notes, photos: data.photos });
+          }}
         />
       )}
     </div>

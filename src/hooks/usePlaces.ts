@@ -117,6 +117,10 @@ export function usePlaces() {
     []
   );
 
+  const updatePlace = useCallback((placeId: string, patch: Partial<Pick<Place, "name" | "country">>) => {
+    setPlaces((prev) => prev.map((p) => (p.id === placeId ? { ...p, ...patch } : p)));
+  }, []);
+
   const updateVisit = useCallback((placeId: string, visitId: string, patch: Partial<Visit>) => {
     setPlaces((prev) =>
       prev.map((p) =>
@@ -183,6 +187,7 @@ export function usePlaces() {
     places,
     addPlace,
     addVisit,
+    updatePlace,
     updateVisit,
     removeVisit,
     removePlace,

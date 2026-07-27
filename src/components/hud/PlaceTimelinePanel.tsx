@@ -3,6 +3,8 @@ import type { FormEvent } from "react";
 import CornerBrackets from "./CornerBrackets";
 import Lightbox from "./Lightbox";
 import ThumbCluster from "./ThumbCluster";
+import AddPlacePopup from "./AddPlacePopup";
+import type { PlacePopupData } from "./AddPlacePopup";
 import { fileToCompressedDataUrl } from "../../utils/image";
 import { groupVisitsByYear, formatVisitDayMonth } from "../../utils/timeline";
 import type { Place, Visit } from "../../types";
@@ -12,6 +14,7 @@ interface PlaceTimelinePanelProps {
   onClose: () => void;
   onAddComment: (visitId: string, data: { text: string; photos: string[] }) => void;
   onDeleteVisit: (visitId: string) => void;
+  onEditVisit: (visitId: string, data: PlacePopupData) => void;
 }
 
 function CommentComposer({ onSubmit }: { onSubmit: (data: { text: string; photos: string[] }) => void }) {
@@ -128,11 +131,13 @@ function VisitRow({
   onOpenLightbox,
   onAddComment,
   onDeleteVisit,
+  onEditVisit,
 }: {
   visit: Visit;
   onOpenLightbox: (photos: string[], index: number) => void;
   onAddComment: (data: { text: string; photos: string[] }) => void;
   onDeleteVisit: () => void;
+  onEditVisit: () => void;
 }) {
   const { day, month } = formatVisitDayMonth(visit.date);
 
@@ -184,24 +189,34 @@ function VisitRow({
 
         <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <CommentComposer onSubmit={onAddComment} />
-          <button
-            type="button"
-            onClick={onDeleteVisit}
-            style={{ background: "none", border: "none", color: "rgba(255,120,120,0.6)", fontSize: 11, cursor: "pointer" }}
-          >
-            删除这次到访
-          </button>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button
+              type="button"
+              onClick={onEditVisit}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.45)", fontSize: 11, cursor: "pointer" }}
+            >
+              编辑
+            </button>
+            <button
+              type="button"
+              onClick={onDeleteVisit}
+              style={{ background: "none", border: "none", color: "rgba(255,120,120,0.6)", fontSize: 11, cursor: "pointer" }}
+            >
+              删除这次到访
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-export default function PlaceTimelinePanel({ place, onClose, onAddComment, onDeleteVisit }: PlaceTimelinePanelProps) {
+export default function PlaceTimelinePanel({ place, onClose, onAddComment, onDeleteVisit, onEditVisit }: PlaceTimelinePanelProps) {
   const yearGroups = groupVisitsByYear(place.visits);
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
   const [lightboxPhotos, setLightboxPhotos] = useState<string[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
 
   const toggleYear = (year: number) => {
     setExpandedYears((prev) => {
@@ -304,6 +319,7 @@ export default function PlaceTimelinePanel({ place, onClose, onAddComment, onDel
                         }}
                         onAddComment={(data) => onAddComment(visit.id, data)}
                         onDeleteVisit={() => onDeleteVisit(visit.id)}
+                        onEditVisit={() => setEditingVisit(visit)}
                       />
                     ))}
                   </div>
@@ -320,6 +336,24 @@ export default function PlaceTimelinePanel({ place, onClose, onAddComment, onDel
           index={lightboxIndex}
           onIndexChange={setLightboxIndex}
           onClose={() => setLightboxPhotos(null)}
+        />
+      )}
+
+      {editingVisit && (
+        <AddPlacePopup
+          mode="edit"
+          initial={{
+            name: place.name,
+            country: place.country,
+            date: editingVisit.date,
+            notes: editingVisit.notes,
+            photos: editingVisit.photos,
+          }}
+          onCancel={() => setEditingVisit(null)}
+          onSave={(data) => {
+            onEditVisit(editingVisit.id, data);
+            setEditingVisit(null);
+          }}
         />
       )}
     </div>
