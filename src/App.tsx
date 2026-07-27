@@ -25,6 +25,7 @@ export default function App() {
   const [isAdding, setIsAdding] = useState(false);
   const [journeyOpen, setJourneyOpen] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [focusVisitId, setFocusVisitId] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
   const summary = useMemo(() => computeSummary(places), [places]);
@@ -35,7 +36,13 @@ export default function App() {
   const handleExitFocus = () => {
     setFocusedId(null);
     setSelectedPlaceId(null);
+    setFocusVisitId(null);
     setIsAdding(false);
+  };
+
+  const openPlace = (placeId: string, visitId?: string) => {
+    setSelectedPlaceId(placeId);
+    setFocusVisitId(visitId ?? null);
   };
 
   const handleEditVisit = (
@@ -63,11 +70,11 @@ export default function App() {
         focusedId={focusedId}
         footprintTarget={null}
         onSurfaceClick={() => setIsAdding(true)}
-        onSelectPlace={(place) => setSelectedPlaceId(place.id)}
+        onSelectPlace={(place) => openPlace(place.id)}
         onFocusPlanet={setFocusedId}
         onExitFocus={handleExitFocus}
         renderMarker={(place) => (
-          <EarthMarker place={place} radius={EARTH_RADIUS} onSelect={(p) => setSelectedPlaceId(p.id)} />
+          <EarthMarker place={place} radius={EARTH_RADIUS} onSelect={(p) => openPlace(p.id)} />
         )}
       />
 
@@ -97,7 +104,7 @@ export default function App() {
         <JourneyPanel
           places={places}
           onClose={() => setJourneyOpen(false)}
-          onSelectPlace={(place) => setSelectedPlaceId(place.id)}
+          onSelectPlace={(place, visitId) => openPlace(place.id, visitId)}
           onAddPlace={() => setIsAdding(true)}
           onEditVisit={handleEditVisit}
         />
@@ -106,7 +113,11 @@ export default function App() {
       {selectedPlace && (
         <PlaceTimelinePanel
           place={selectedPlace}
-          onClose={() => setSelectedPlaceId(null)}
+          focusVisitId={focusVisitId}
+          onClose={() => {
+            setSelectedPlaceId(null);
+            setFocusVisitId(null);
+          }}
           onAddComment={(visitId, data) => addComment(selectedPlace.id, visitId, data)}
           onDeleteVisit={(visitId) => removeVisit(selectedPlace.id, visitId)}
           onEditVisit={(visitId, data) => handleEditVisit(selectedPlace.id, visitId, data)}

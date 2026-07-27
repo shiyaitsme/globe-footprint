@@ -12,7 +12,7 @@ import type { Place } from "../../types";
 interface JourneyPanelProps {
   places: Place[];
   onClose: () => void;
-  onSelectPlace: (place: Place) => void;
+  onSelectPlace: (place: Place, visitId?: string) => void;
   onAddPlace: () => void;
   onEditVisit: (placeId: string, visitId: string, data: PlacePopupData) => void;
 }
@@ -195,7 +195,7 @@ export default function JourneyPanel({ places, onClose, onSelectPlace, onAddPlac
                                   type="button"
                                   onClick={() => {
                                     const place = places.find((p) => p.id === visit.placeId);
-                                    if (place) onSelectPlace(place);
+                                    if (place) onSelectPlace(place, visit.id);
                                   }}
                                   style={{
                                     background: "none",
