@@ -38,6 +38,15 @@ export default function App() {
     setIsAdding(false);
   };
 
+  const handleEditVisit = (
+    placeId: string,
+    visitId: string,
+    data: { name: string; country: string; date: string; notes: string; photos: string[] }
+  ) => {
+    updatePlace(placeId, { name: data.name, country: data.country });
+    updateVisit(placeId, visitId, { date: data.date, notes: data.notes, photos: data.photos });
+  };
+
   return (
     <div
       style={{
@@ -84,6 +93,26 @@ export default function App() {
         </>
       )}
 
+      {journeyOpen && (
+        <JourneyPanel
+          places={places}
+          onClose={() => setJourneyOpen(false)}
+          onSelectPlace={(place) => setSelectedPlaceId(place.id)}
+          onAddPlace={() => setIsAdding(true)}
+          onEditVisit={handleEditVisit}
+        />
+      )}
+
+      {selectedPlace && (
+        <PlaceTimelinePanel
+          place={selectedPlace}
+          onClose={() => setSelectedPlaceId(null)}
+          onAddComment={(visitId, data) => addComment(selectedPlace.id, visitId, data)}
+          onDeleteVisit={(visitId) => removeVisit(selectedPlace.id, visitId)}
+          onEditVisit={(visitId, data) => handleEditVisit(selectedPlace.id, visitId, data)}
+        />
+      )}
+
       {isAdding && (
         <AddPlacePopup
           onCancel={() => setIsAdding(false)}
@@ -96,27 +125,6 @@ export default function App() {
               addPlace({ name, country, date, notes, photos, lat, lng });
             }
             setIsAdding(false);
-          }}
-        />
-      )}
-
-      {journeyOpen && (
-        <JourneyPanel
-          places={places}
-          onClose={() => setJourneyOpen(false)}
-          onSelectPlace={(place) => setSelectedPlaceId(place.id)}
-        />
-      )}
-
-      {selectedPlace && (
-        <PlaceTimelinePanel
-          place={selectedPlace}
-          onClose={() => setSelectedPlaceId(null)}
-          onAddComment={(visitId, data) => addComment(selectedPlace.id, visitId, data)}
-          onDeleteVisit={(visitId) => removeVisit(selectedPlace.id, visitId)}
-          onEditVisit={(visitId, data) => {
-            updatePlace(selectedPlace.id, { name: data.name, country: data.country });
-            updateVisit(selectedPlace.id, visitId, { date: data.date, notes: data.notes, photos: data.photos });
           }}
         />
       )}

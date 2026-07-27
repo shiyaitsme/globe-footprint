@@ -2,14 +2,19 @@ import { useState } from "react";
 import CornerBrackets from "./CornerBrackets";
 import Lightbox from "./Lightbox";
 import ThumbCluster from "./ThumbCluster";
+import AddPlacePopup from "./AddPlacePopup";
+import type { PlacePopupData } from "./AddPlacePopup";
 import { groupVisitsByYear, formatVisitDayMonth } from "../../utils/timeline";
 import { flattenVisits, groupPlacesByCountry } from "../../utils/journey";
+import type { VisitWithPlace } from "../../utils/journey";
 import type { Place } from "../../types";
 
 interface JourneyPanelProps {
   places: Place[];
   onClose: () => void;
   onSelectPlace: (place: Place) => void;
+  onAddPlace: () => void;
+  onEditVisit: (placeId: string, visitId: string, data: PlacePopupData) => void;
 }
 
 type Mode = "time" | "place";
@@ -37,12 +42,13 @@ function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => 
   );
 }
 
-export default function JourneyPanel({ places, onClose, onSelectPlace }: JourneyPanelProps) {
+export default function JourneyPanel({ places, onClose, onSelectPlace, onAddPlace, onEditVisit }: JourneyPanelProps) {
   const [mode, setMode] = useState<Mode>("time");
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
   const [expandedCountries, setExpandedCountries] = useState<Set<string>>(new Set());
   const [lightboxPhotos, setLightboxPhotos] = useState<string[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [editingVisit, setEditingVisit] = useState<VisitWithPlace | null>(null);
 
   const yearGroups = groupVisitsByYear(flattenVisits(places));
   const countryGroups = groupPlacesByCountry(places);
@@ -115,8 +121,24 @@ export default function JourneyPanel({ places, onClose, onSelectPlace }: Journey
           共 {places.length} 个地点 · {places.reduce((sum, p) => sum + p.visits.length, 0)} 次到访
         </div>
 
-        <div style={{ marginBottom: 18 }}>
+        <div style={{ marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <ModeToggle mode={mode} onChange={setMode} />
+          <button
+            type="button"
+            onClick={onAddPlace}
+            style={{
+              font: "inherit",
+              padding: "8px 18px",
+              border: "1.5px solid #fff",
+              background: "#fff",
+              color: "#0a0a0c",
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            + 添加足迹
+          </button>
         </div>
 
         <div style={{ overflowY: "auto", paddingRight: 4 }}>
@@ -199,6 +221,13 @@ export default function JourneyPanel({ places, onClose, onSelectPlace }: Journey
                                     </div>
                                   </div>
                                 </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingVisit(visit)}
+                                  style={{ marginTop: 6, background: "none", border: "none", color: "rgba(255,255,255,0.45)", fontSize: 11, cursor: "pointer", padding: 0 }}
+                                >
+                                  编辑
+                                </button>
                               </div>
                             </div>
                           );
@@ -283,6 +312,24 @@ export default function JourneyPanel({ places, onClose, onSelectPlace }: Journey
           index={lightboxIndex}
           onIndexChange={setLightboxIndex}
           onClose={() => setLightboxPhotos(null)}
+        />
+      )}
+
+      {editingVisit && (
+        <AddPlacePopup
+          mode="edit"
+          initial={{
+            name: editingVisit.placeName,
+            country: editingVisit.placeCountry,
+            date: editingVisit.date,
+            notes: editingVisit.notes,
+            photos: editingVisit.photos,
+          }}
+          onCancel={() => setEditingVisit(null)}
+          onSave={(data) => {
+            onEditVisit(editingVisit.placeId, editingVisit.id, data);
+            setEditingVisit(null);
+          }}
         />
       )}
     </div>
